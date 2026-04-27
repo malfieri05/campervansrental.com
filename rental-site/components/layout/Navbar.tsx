@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname, useSearchParams } from 'next/navigation'
-import { Menu, X, Tent, ChevronDown } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { LayoutGroup, motion } from 'framer-motion'
+import { Menu, X, Tent } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import UserAuthNav from '@/components/layout/UserAuthNav'
 import { createClient } from '@/lib/supabase/client'
@@ -15,13 +16,7 @@ const hostLinks = [
   { label: 'Home', href: '/host' },
   { label: 'Listings', href: '/host/listings' },
   { label: 'Calendar', href: '/host/calendar' },
-]
-
-const bookingStatuses = [
-  { label: 'Pending', status: 'pending' },
-  { label: 'Confirmed', status: 'confirmed' },
-  { label: 'Completed', status: 'completed' },
-  { label: 'Cancelled', status: 'cancelled' },
+  { label: 'Bookings', href: '/host/bookings' },
 ]
 
 function useIsHost() {
@@ -64,10 +59,7 @@ function useIsHost() {
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [bookingsOpen, setBookingsOpen] = useState(false)
-  const bookingsRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
-  const searchParams = useSearchParams()
   const isHost = useIsHost()
 
   useEffect(() => {
@@ -84,17 +76,6 @@ export default function Navbar() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Close bookings dropdown when clicking outside
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (bookingsRef.current && !bookingsRef.current.contains(e.target as Node)) {
-        setBookingsOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
-
   const navbarClasses = [
     'fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out',
     'border-b border-forest-900/40 bg-forest-950/95 backdrop-blur-md shadow-sm',
@@ -103,15 +84,16 @@ export default function Navbar() {
     .filter(Boolean)
     .join(' ')
 
-  const isActiveLink = (href: string) => pathname === href || pathname.startsWith(href + '/')
-
-  const isActiveBookings = pathname.startsWith('/host/bookings')
-
-  const currentStatus = searchParams.get('status') ?? ''
+  /** Host "Home" is exactly `/host` — must not use prefix match or every `/host/...` page would highlight Home. */
+  const isActiveLink = (href: string) => {
+    if (pathname === href) return true
+    if (href === '/host') return false
+    return pathname.startsWith(`${href}/`)
+  }
 
   const desktopLinkClass = (active: boolean) =>
     [
-      'font-display text-xs font-600 uppercase tracking-[0.12em] transition-colors duration-300 relative group',
+      'font-display text-xs font-600 uppercase tracking-[0.12em] transition-colors duration-300 relative inline-block pb-1',
       active ? 'text-gold-300' : 'text-cream-200/80 hover:text-gold-300',
     ].join(' ')
 
@@ -146,59 +128,30 @@ export default function Navbar() {
               </div>
             </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center gap-10">
-              {links.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={desktopLinkClass(isActiveLink(link.href))}
-                >
-                  {link.label}
-                  <span className={`absolute -bottom-1 left-0 h-px bg-gold-400 transition-all duration-300 ${isActiveLink(link.href) ? 'w-full' : 'w-0 group-hover:w-full'}`} />
-                </Link>
-              ))}
-
-              {/* Bookings dropdown — host only */}
-              {isHost && (
-                <div className="relative" ref={bookingsRef}>
-                  <button
-                    type="button"
-                    onClick={() => setBookingsOpen((o) => !o)}
-                    className={desktopLinkClass(isActiveBookings)}
-                  >
-                    <span className="flex items-center gap-1">
-                      Bookings
-                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${bookingsOpen ? 'rotate-180' : ''}`} />
-                    </span>
-                    <span className={`absolute -bottom-1 left-0 h-px bg-gold-400 transition-all duration-300 ${isActiveBookings ? 'w-full' : 'w-0 group-hover:w-full'}`} />
-                  </button>
-
-                  {bookingsOpen && (
-                    <div className="absolute left-0 top-full mt-3 w-44 rounded-xl border border-forest-800 bg-forest-950 shadow-luxury py-2 z-[60] ring-1 ring-black/20">
-                      {bookingStatuses.map(({ label, status }) => {
-                        const active = isActiveBookings && currentStatus === status
-                        return (
-                          <Link
-                            key={status}
-                            href={`/host/bookings?status=${status}`}
-                            onClick={() => setBookingsOpen(false)}
-                            className={[
-                              'flex items-center px-4 py-2.5 text-xs font-display uppercase tracking-[0.1em] transition-colors',
-                              active
-                                ? 'text-gold-300 bg-forest-800'
-                                : 'text-cream-100 hover:text-gold-300 hover:bg-forest-800/80',
-                            ].join(' ')}
-                          >
-                            {label}
-                          </Link>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            {/* Desktop Navigation — shared layoutId underline glides between tabs */}
+            <LayoutGroup id="desktop-nav-tabs">
+              <div className="hidden lg:flex items-center gap-10">
+                {links.map((link) => {
+                  const active = isActiveLink(link.href)
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className={desktopLinkClass(active)}
+                    >
+                      {link.label}
+                      {active && (
+                        <motion.span
+                          layoutId="desktop-nav-underline"
+                          className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-gold-400"
+                          transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                        />
+                      )}
+                    </Link>
+                  )
+                })}
+              </div>
+            </LayoutGroup>
 
             {/* Desktop auth + CTA */}
             <div className="hidden lg:flex items-center gap-4">
@@ -240,31 +193,6 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
-
-              {/* Bookings sub-links — host only */}
-              {isHost && (
-                <div className="flex flex-col gap-0">
-                  <span className={mobileLinkClass(isActiveBookings)}>Bookings</span>
-                  <div className="pl-4 flex flex-col gap-3 mt-3">
-                    {bookingStatuses.map(({ label, status }) => {
-                      const active = isActiveBookings && currentStatus === status
-                      return (
-                        <Link
-                          key={status}
-                          href={`/host/bookings?status=${status}`}
-                          onClick={() => setMobileOpen(false)}
-                          className={[
-                            'font-display text-xs uppercase tracking-[0.12em] transition-colors',
-                            active ? 'text-gold-300' : 'text-cream-200/60 hover:text-gold-300',
-                          ].join(' ')}
-                        >
-                          {label}
-                        </Link>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
 
               <UserAuthNav mobile />
               {!isHost && (
