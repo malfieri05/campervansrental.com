@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { CalendarRange, User, ArrowUpRight } from 'lucide-react'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
+import BookingsStatusTabs from './BookingsStatusTabs'
 
 type StatusParam = 'pending' | 'confirmed' | 'completed' | 'cancelled'
 
@@ -52,12 +53,7 @@ function statusBadge(status: StatusParam) {
   return styles[status] ?? 'bg-neutral-100 text-neutral-500 border border-neutral-200'
 }
 
-const STATUS_TABS: { label: string; status: StatusParam }[] = [
-  { label: 'Pending', status: 'pending' },
-  { label: 'Confirmed', status: 'confirmed' },
-  { label: 'Completed', status: 'completed' },
-  { label: 'Cancelled', status: 'cancelled' },
-]
+const VALID_STATUSES: StatusParam[] = ['pending', 'confirmed', 'completed', 'cancelled']
 
 export default async function HostBookingsPage({
   searchParams,
@@ -65,7 +61,7 @@ export default async function HostBookingsPage({
   searchParams: { status?: string }
 }) {
   const rawStatus = (searchParams.status ?? 'confirmed') as StatusParam
-  const activeStatus: StatusParam = STATUS_TABS.some((t) => t.status === rawStatus) ? rawStatus : 'confirmed'
+  const activeStatus: StatusParam = VALID_STATUSES.includes(rawStatus) ? rawStatus : 'confirmed'
 
   const supabase = await createServerSupabaseClient()
   if (!supabase) return null
@@ -141,23 +137,7 @@ export default async function HostBookingsPage({
         <h1 className="font-sans text-2xl font-bold tracking-tight text-neutral-900">Bookings</h1>
       </div>
 
-      {/* Status tabs */}
-      <div className="mb-6 flex gap-1 rounded-xl border border-neutral-200 bg-white p-1 shadow-sm w-fit">
-        {STATUS_TABS.map(({ label, status }) => (
-          <Link
-            key={status}
-            href={`/host/bookings?status=${status}`}
-            className={[
-              'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
-              activeStatus === status
-                ? 'bg-neutral-900 text-white'
-                : 'text-neutral-600 hover:bg-neutral-100',
-            ].join(' ')}
-          >
-            {label}
-          </Link>
-        ))}
-      </div>
+      <BookingsStatusTabs activeStatus={activeStatus} />
 
       {/* Booking list */}
       {reservations.length === 0 ? (

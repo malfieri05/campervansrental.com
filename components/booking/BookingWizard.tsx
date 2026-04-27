@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Check, ChevronRight, MapPin, Calendar, Users, Star, ArrowLeft } from 'lucide-react'
@@ -22,7 +22,7 @@ const locationOptions = [
   'Aspen, CO',
   'Portland, OR',
   'Seattle, WA',
-]
+] as const
 
 interface FormData {
   location: string
@@ -37,16 +37,41 @@ interface FormData {
   specialRequests: string
 }
 
-export default function BookingWizard({
-  initialListings,
-  preselectSlug,
-}: {
-  initialListings: Van[]
-  preselectSlug?: string
-}) {
-  const router = useRouter()
-  const [currentStep, setCurrentStep] = useState(1)
-  const [form, setForm] = useState<FormData>({
+function validDateOrder(start: string, end: string) {
+  if (!start || !end) return false
+  const a = new Date(start + 'T12:00:00')
+  const b = new Date(end + 'T12:00:00')
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return false
+  return b > a
+}
+
+function matchVanLocationToOption(vanLocation: string) {
+  const v = vanLocation.trim()
+  if (!v) return locationOptions[0]
+  const exact = locationOptions.find((o) => o === v)
+  if (exact) return exact
+  const head = v.split(',')[0]?.trim().toLowerCase() ?? ''
+  const fuzzy = locationOptions.find(
+    (o) => head && (o.toLowerCase().includes(head) || o.toLowerCase().startsWith(head.slice(0, 4)))
+  )
+  return fuzzy ?? locationOptions[0]
+}
+
+type WizardSeed = {
+  step: number
+  form: FormData
+  /** Landed from listing with dates — Back from step 3 returns to that listing */
+  fromListingWithDates: boolean
+}
+
+function buildInitialWizardState(
+  initialListings: Van[],
+  preselectSlug?: string,
+  initialCheckIn?: string,
+  initialCheckOut?: string,
+  initialGuests?: number
+): WizardSeed {
+  const form: FormData = {
     location: '',
     startDate: '',
     endDate: '',
@@ -57,19 +82,85 @@ export default function BookingWizard({
     email: '',
     phone: '',
     specialRequests: '',
-  })
+  }
+  let step = 1
+  let fromListingWithDates = false
 
-  useEffect(() => {
-    if (!preselectSlug) return
-    const exists = initialListings.some((v) => v.id === preselectSlug)
-    if (exists) {
-      setForm((prev) => ({ ...prev, selectedVanId: preselectSlug }))
-      setCurrentStep(2)
+  if (preselectSlug) {
+    const van = initialListings.find((v) => v.id === preselectSlug)
+    if (van) {
+      form.selectedVanId = van.id
+      form.location = matchVanLocationToOption(van.location)
+      if (initialGuests != null && initialGuests >= 1 && initialGuests <= 4) {
+        form.guests = initialGuests
+      }
+      const cin = initialCheckIn?.trim()
+      const cout = initialCheckOut?.trim()
+      if (cin && cout && validDateOrder(cin, cout)) {
+        form.startDate = cin
+        form.endDate = cout
+        step = 3
+        fromListingWithDates = true
+      }
     }
-  }, [preselectSlug, initialListings])
+  }
+
+  return { step, form, fromListingWithDates }
+}
+
+export default function BookingWizard({
+  initialListings,
+  preselectSlug,
+  initialCheckIn,
+  initialCheckOut,
+  initialGuests,
+}: {
+  initialListings: Van[]
+  preselectSlug?: string
+  initialCheckIn?: string
+  initialCheckOut?: string
+  initialGuests?: number
+}) {
+  const router = useRouter()
+  const seed = useMemo(
+    () =>
+      buildInitialWizardState(
+        initialListings,
+        preselectSlug,
+        initialCheckIn,
+        initialCheckOut,
+        initialGuests
+      ),
+    [initialListings, preselectSlug, initialCheckIn, initialCheckOut, initialGuests]
+  )
+  const [currentStep, setCurrentStep] = useState(seed.step)
+  const [form, setForm] = useState<FormData>(seed.form)
 
   const updateForm = (field: keyof FormData, value: string | number) => {
     setForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const goNext = () => {
+    if (
+      currentStep === 1 &&
+      form.selectedVanId &&
+      form.location &&
+      form.startDate &&
+      form.endDate &&
+      nights > 0
+    ) {
+      setCurrentStep(3)
+      return
+    }
+    setCurrentStep((s) => Math.min(4, s + 1))
+  }
+
+  const goBack = () => {
+    if (currentStep === 3 && seed.fromListingWithDates && form.selectedVanId) {
+      router.push(`/listings/${form.selectedVanId}`)
+      return
+    }
+    setCurrentStep((s) => Math.max(1, s - 1))
   }
 
   const selectedVan = initialListings.find((v) => v.id === form.selectedVanId)
@@ -114,7 +205,9 @@ export default function BookingWizard({
             Reserve Your Van
           </h1>
           <p className="font-sans text-cream-200/60 text-sm">
-            Complete the steps below to secure your luxury adventure.
+            {seed.fromListingWithDates
+              ? 'You already chose this van and your trip dates. Add your details below to continue.'
+              : 'Complete the steps below to secure your luxury adventure.'}
           </p>
         </div>
       </div>
@@ -445,7 +538,8 @@ export default function BookingWizard({
         <div className="flex items-center justify-between mt-8">
           {currentStep > 1 ? (
             <button
-              onClick={() => setCurrentStep((s) => s - 1)}
+              type="button"
+              onClick={goBack}
               className="flex items-center gap-2 font-display text-xs font-semibold uppercase tracking-widest text-charcoal/60 hover:text-charcoal transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -460,7 +554,7 @@ export default function BookingWizard({
               variant="primary"
               size="md"
               disabled={!canProceed()}
-              onClick={() => setCurrentStep((s) => s + 1)}
+              onClick={goNext}
             >
               Continue
               <ChevronRight className="w-4 h-4" />
