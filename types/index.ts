@@ -26,6 +26,10 @@ export interface Van {
   /** From DB listing row; defaults used in UI when absent */
   cleaningFeeCents?: number
   insuranceFeeCents?: number
+  /** Held at pickup (not part of the 25% reservation fee); refundable per host policy */
+  securityDepositCents?: number
+  minNights?: number
+  viewCount?: number
   rules?: Record<string, unknown>
   // Extended content fields
   whatsIncluded?: string | null

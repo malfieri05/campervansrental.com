@@ -16,6 +16,8 @@ type ListingRow = {
   price_per_night_cents: number
   cleaning_fee_cents: number
   insurance_fee_cents: number
+  min_nights: number | null
+  security_deposit_cents: number | null
   amenities: Amenity[] | null
   features: string[] | null
   rules: Record<string, unknown> | null
@@ -63,6 +65,8 @@ function mapRowToVan(row: ListingRow): Van {
     location: row.location_label || '',
     cleaningFeeCents: row.cleaning_fee_cents,
     insuranceFeeCents: row.insurance_fee_cents,
+    minNights: row.min_nights ?? 1,
+    securityDepositCents: row.security_deposit_cents ?? undefined,
     rules: row.rules || {},
     whatsIncluded: row.whats_included ?? null,
     faqs: Array.isArray(row.listing_faqs) ? row.listing_faqs : [],
@@ -98,6 +102,8 @@ export async function getPublishedListings(): Promise<Van[]> {
       price_per_night_cents,
       cleaning_fee_cents,
       insurance_fee_cents,
+      min_nights,
+      security_deposit_cents,
       amenities,
       features,
       rules,
@@ -152,6 +158,8 @@ export async function getPublishedListingBySlug(slug: string): Promise<Van | nul
       price_per_night_cents,
       cleaning_fee_cents,
       insurance_fee_cents,
+      min_nights,
+      security_deposit_cents,
       amenities,
       features,
       rules,

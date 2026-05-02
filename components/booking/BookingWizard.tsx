@@ -152,6 +152,17 @@ export default function BookingWizard({
       setCurrentStep(3)
       return
     }
+    // When entering step 4 from a listing-with-dates origin, redirect to the
+    // Outdoorsy-style review route instead of the old wizard confirmation step.
+    if (currentStep === 3 && seed.fromListingWithDates && form.selectedVanId) {
+      const params = new URLSearchParams({
+        start: form.startDate,
+        end: form.endDate,
+        guests: String(form.guests),
+      })
+      router.push(`/listings/${form.selectedVanId}/request?${params.toString()}`)
+      return
+    }
     setCurrentStep((s) => Math.min(4, s + 1))
   }
 
@@ -175,13 +186,7 @@ export default function BookingWizard({
 
   const nights = getNights()
   const totalPrice = selectedVan ? selectedVan.pricePerNight * nights : 0
-  const cleaningDollars = selectedVan?.cleaningFeeCents
-    ? Math.round(selectedVan.cleaningFeeCents / 100)
-    : 150
-  const insuranceDollars = selectedVan?.insuranceFeeCents
-    ? Math.round(selectedVan.insuranceFeeCents / 100)
-    : 75
-  const grandTotal = totalPrice + cleaningDollars + insuranceDollars
+  const grandTotal = totalPrice
 
   const canProceed = () => {
     if (currentStep === 1) return form.location && form.startDate && form.endDate && nights > 0
@@ -487,21 +492,9 @@ export default function BookingWizard({
                     ${totalPrice.toLocaleString()}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="font-sans text-charcoal/60">Cleaning & preparation fee</span>
-                  <span className="font-sans font-medium text-charcoal">
-                    ${cleaningDollars.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-sans text-charcoal/60">Insurance & roadside assistance</span>
-                  <span className="font-sans font-medium text-charcoal">
-                    ${insuranceDollars.toLocaleString()}
-                  </span>
-                </div>
                 <div className="h-px bg-cream-300 my-2" />
                 <div className="flex justify-between font-semibold">
-                  <span className="font-display text-sm uppercase tracking-widest text-charcoal">Total</span>
+                  <span className="font-display text-sm uppercase tracking-widest text-charcoal">Trip total</span>
                   <span className="font-serif text-xl text-gold-600">
                     ${grandTotal.toLocaleString()}
                   </span>
@@ -556,14 +549,14 @@ export default function BookingWizard({
               disabled={!canProceed()}
               onClick={goNext}
             >
-              Continue
+              {currentStep === 3 && seed.fromListingWithDates ? 'Review request' : 'Continue'}
               <ChevronRight className="w-4 h-4" />
             </Button>
           ) : (
             <div className="flex flex-col items-end gap-2">
               {!selectedVan?.listingUuid && (
                 <p className="font-sans text-xs text-charcoal/50 max-w-xs text-right">
-                  Online deposit checkout is available for live marketplace listings. Configure
+                  Online reservation checkout is available for live marketplace listings. Configure
                   Supabase and publish a host listing to enable payment.
                 </p>
               )}

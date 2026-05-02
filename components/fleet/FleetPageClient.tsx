@@ -1,4 +1,6 @@
 import Image from 'next/image'
+import Link from 'next/link'
+import { ChevronLeft } from 'lucide-react'
 import VanCard from '@/components/fleet/VanCard'
 import { Van } from '@/types'
 
@@ -16,31 +18,30 @@ export default function FleetPageClient({ listings }: { listings: Van[] }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-forest-950 via-forest-950/60 to-forest-950/20" />
         <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-10 pb-12">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="h-px w-10 bg-gold-400/60" />
-            <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-gold-400">
-              Our Collection
-            </span>
-          </div>
           <h1
             className="font-serif text-cream-50 font-bold"
             style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)' }}
           >
             Our Fleet
           </h1>
-          <p className="font-sans text-cream-200/60 mt-2 text-base max-w-xl">
-            {listings.length} hand-curated vans, each outfitted to the highest standard of luxury travel.
-          </p>
         </div>
       </section>
 
       <section className="max-w-7xl mx-auto px-6 lg:px-10 py-16">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 font-sans text-sm font-medium text-charcoal/70 hover:text-charcoal transition-colors mb-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest-600 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-100 rounded"
+        >
+          <ChevronLeft className="w-4 h-4 shrink-0" strokeWidth={2.5} aria-hidden />
+          Home
+        </Link>
+
         {listings.length > 0 ? (
           <>
             <p className="font-sans text-sm text-charcoal/40 mb-8">
               Showing {listings.length} van{listings.length !== 1 ? 's' : ''}
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {listings.map((van) => (
                 <VanCard key={van.id} van={van} />
               ))}

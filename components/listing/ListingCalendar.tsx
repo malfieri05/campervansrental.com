@@ -27,6 +27,11 @@ type Props = {
   /** Called with the clicked day key; parent manages checkIn/checkOut state */
   onDateClick?: (key: string) => void
   className?: string
+  /**
+   * Wide overlay (e.g. listing sidebar popover): always show two months side-by-side
+   * with comfortable cell sizing — avoids squashed grids inside narrow columns.
+   */
+  layout?: 'inline' | 'overlay'
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
@@ -99,7 +104,7 @@ function MonthPane({
         <div className="flex justify-end">{trailingNav ?? placeholder}</div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 text-center font-display text-[0.6rem] sm:text-[0.65rem] uppercase tracking-wide text-charcoal/40 mb-2">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-center font-display text-[0.55rem] sm:text-[0.65rem] uppercase tracking-wide text-charcoal/40 mb-2">
         {WEEKDAYS.map((d) => (
           <div key={d} className="py-0.5">
             {d}
@@ -179,6 +184,7 @@ export default function ListingCalendar({
   checkOut,
   onDateClick,
   className = '',
+  layout = 'inline',
 }: Props) {
   const [cursor, setCursor] = useState(() => startOfMonth(new Date()))
   /** Host-mode internal selection start */
@@ -239,9 +245,14 @@ export default function ListingCalendar({
   const navBtnClass =
     'inline-flex w-9 h-9 items-center justify-center rounded-lg border border-cream-300/70 bg-cream-100/80 text-charcoal hover:bg-cream-200/80 hover:border-cream-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400'
 
+  const dualMonthClass =
+    layout === 'overlay'
+      ? 'grid grid-cols-1 min-[520px]:grid-cols-2 gap-3 sm:gap-4'
+      : 'grid grid-cols-1 md:grid-cols-2 gap-4'
+
   return (
     <div className={className}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className={dualMonthClass}>
         <MonthPane
           monthAnchor={cursor}
           gridDays={gridDaysLeft}

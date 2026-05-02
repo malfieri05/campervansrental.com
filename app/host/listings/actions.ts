@@ -414,6 +414,50 @@ export async function removeHostAvailabilityBlock(
   return { ok: true }
 }
 
+/**
+ * Removes all host_blocked rows for a listing that overlap the given
+ * half-open date range [startDate, endDate).  Used by the "Update
+ * availability → Available" flow on the host calendar.
+ */
+export async function clearHostAvailabilityInRange(
+  listingId: string,
+  startDate: string,
+  endDate: string
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createServerSupabaseClient()
+  if (!supabase) return { ok: false, error: 'Supabase not configured' }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Unauthorized' }
+
+  // Verify ownership
+  const { data: listing } = await supabase
+    .from('listings')
+    .select('id')
+    .eq('id', listingId)
+    .eq('owner_id', user.id)
+    .maybeSingle()
+  if (!listing) return { ok: false, error: 'Listing not found' }
+
+  // Delete any host_blocked row whose range overlaps [startDate, endDate)
+  const { error } = await supabase
+    .from('availability_blocks')
+    .delete()
+    .eq('listing_id', listingId)
+    .eq('block_type', 'host_blocked')
+    .lt('start_date', endDate)
+    .gt('end_date', startDate)
+
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath('/host/calendar')
+  revalidatePath(`/host/listings/${listingId}/edit`)
+  revalidatePath('/listings')
+  return { ok: true }
+}
+
 // ─── Fetch for editing ────────────────────────────────────────────────────────
 
 export async function getHostListingForEdit(

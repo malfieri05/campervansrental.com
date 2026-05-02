@@ -10,27 +10,17 @@ export default async function FeaturedVans() {
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
         <div className="text-center mb-16">
-          <div className="flex items-center justify-center gap-4 mb-5">
+          <div className="flex items-center justify-center gap-4">
             <div className="h-px w-16 bg-gradient-to-r from-transparent to-gold-400" />
             <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-gold-500">
-              Our Fleet
+              Our Curated Fleet
             </span>
             <div className="h-px w-16 bg-gradient-to-l from-transparent to-gold-400" />
           </div>
-          <h2
-            className="font-serif text-charcoal font-bold mb-5 leading-tight"
-            style={{ fontSize: 'clamp(2rem, 4vw, 3rem)' }}
-          >
-            Our Curated Fleet
-          </h2>
-          <p className="font-sans text-charcoal/55 text-lg max-w-2xl mx-auto leading-relaxed">
-            Every van in our collection is hand-selected, professionally outfitted, and maintained to the
-            highest standards. These are not rentals — they are rolling works of art.
-          </p>
         </div>
 
         {/* Van Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-14">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-14">
           {listings.map((van) => (
             <VanCard key={van.id} van={van} />
           ))}

@@ -28,6 +28,10 @@ const locationOptions = [
   'Seattle, WA',
 ]
 
+/** Hero headline: cream bookends, larger gold italic center line */
+const HERO_HEADLINE_BASE = 'clamp(1.85rem, 4.5vw, 3.35rem)'
+const HERO_HEADLINE_ACCENT = 'clamp(2.035rem, 4.95vw, 3.685rem)'
+
 export default function Hero() {
   const [mounted, setMounted] = useState(false)
   const [location, setLocation] = useState('')
@@ -58,52 +62,39 @@ export default function Hero() {
 
       {/* Main content */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 pt-32 pb-48">
-        {/* Gold label */}
-        <motion.div
-          variants={fadeUpVariant}
-          initial="hidden"
-          animate="visible"
-          custom={0.2}
-          className="flex items-center gap-3 mb-8"
-        >
-          <div className="h-px w-12 bg-gold-400/60" />
-          <span className="font-display text-xs font-bold uppercase tracking-[0.25em] text-gold-400">
-            Luxury Camper Van Rentals
-          </span>
-          <div className="h-px w-12 bg-gold-400/60" />
-        </motion.div>
-
-        {/* Main headline */}
         <motion.h1
           variants={fadeUpVariant}
           initial="hidden"
           animate="visible"
-          custom={0.4}
-          className="font-serif text-cream-50 font-700 leading-[1.05] mb-8 text-shadow-luxury max-w-4xl"
-          style={{ fontSize: 'clamp(3.5rem, 8vw, 7rem)' }}
+          custom={0.35}
+          className="flex flex-col items-center gap-1 sm:gap-1.5 mb-12 max-w-5xl text-center"
         >
-          The World Is Your{' '}
-          <span className="luxury-text-gradient italic">Living Room.</span>
+          <span
+            className="font-serif font-bold text-cream-50 text-shadow-luxury leading-tight block"
+            style={{ fontSize: HERO_HEADLINE_BASE }}
+          >
+            Your
+          </span>
+          <span
+            className="font-serif font-bold italic text-gold-400 text-shadow-luxury leading-tight block"
+            style={{ fontSize: HERO_HEADLINE_ACCENT }}
+          >
+            Camper Van Adventure
+          </span>
+          <span
+            className="font-serif font-bold text-cream-50 text-shadow-luxury leading-tight block"
+            style={{ fontSize: HERO_HEADLINE_BASE }}
+          >
+            Awaits
+          </span>
         </motion.h1>
-
-        {/* Subtitle */}
-        <motion.p
-          variants={fadeUpVariant}
-          initial="hidden"
-          animate="visible"
-          custom={0.6}
-          className="font-sans text-cream-200/75 text-lg md:text-xl max-w-2xl mb-12 leading-relaxed font-light"
-        >
-          Premium camper vans crafted for those who refuse to choose between
-          wilderness and luxury.
-        </motion.p>
 
         {/* CTA Buttons */}
         <motion.div
           variants={fadeUpVariant}
           initial="hidden"
           animate="visible"
-          custom={0.8}
+          custom={0.55}
           className="flex justify-center"
         >
           <Button href="/fleet" variant="primary" size="lg">

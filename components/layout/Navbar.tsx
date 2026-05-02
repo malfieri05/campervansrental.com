@@ -5,12 +5,11 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutGroup, motion } from 'framer-motion'
 import { Menu, X, Tent } from 'lucide-react'
-import Button from '@/components/ui/Button'
 import UserAuthNav from '@/components/layout/UserAuthNav'
 import { createClient } from '@/lib/supabase/client'
 import { isSupabaseConfigured } from '@/lib/env'
 
-const guestLinks = [{ label: 'Fleet', href: '/fleet' }]
+const guestLinks = [{ label: 'Browse', href: '/fleet' }]
 
 const hostLinks = [
   { label: 'Home', href: '/host' },
@@ -56,11 +55,40 @@ function useIsHost() {
   return isHost
 }
 
+function useLoggedIn() {
+  const [loggedIn, setLoggedIn] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      setLoggedIn(false)
+      return
+    }
+    const supabase = createClient()
+
+    supabase.auth.getSession().then(({ data }) => {
+      setLoggedIn(Boolean(data.session))
+    })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setLoggedIn(Boolean(session))
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  return loggedIn
+}
+
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
   const isHost = useIsHost()
+  const loggedIn = useLoggedIn()
+
+  /** Logged-in travelers see Browse next to the profile; logged-out users do not. */
+  const showBrowse = loggedIn === true && isHost === false
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60)
@@ -93,7 +121,7 @@ export default function Navbar() {
 
   const desktopLinkClass = (active: boolean) =>
     [
-      'font-display text-xs font-600 uppercase tracking-[0.12em] transition-colors duration-300 relative inline-block pb-1',
+      'font-display text-xs font-semibold uppercase tracking-[0.12em] transition-colors duration-300 relative inline-block pb-1',
       active ? 'text-gold-300' : 'text-cream-200/80 hover:text-gold-300',
     ].join(' ')
 
@@ -103,7 +131,7 @@ export default function Navbar() {
       active ? 'text-gold-300' : 'text-cream-100/80 hover:text-gold-300',
     ].join(' ')
 
-  const links = isHost ? hostLinks : guestLinks
+  const mobileNavLinks = isHost ? hostLinks : showBrowse ? guestLinks : []
 
   return (
     <>
@@ -112,11 +140,8 @@ export default function Navbar() {
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="relative">
-                <div className="w-9 h-9 bg-gold-400 flex items-center justify-center rounded-sm group-hover:bg-gold-300 transition-colors duration-300">
-                  <Tent className="w-5 h-5 text-forest-950" strokeWidth={1.5} />
-                </div>
-                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gold-300 rounded-full opacity-70" />
+              <div className="w-9 h-9 bg-gold-400 flex items-center justify-center rounded-sm group-hover:bg-gold-300 transition-colors duration-300">
+                <Tent className="w-5 h-5 text-forest-950" strokeWidth={1.5} />
               </div>
               <div className="flex flex-col">
                 <span className="font-serif text-cream-50 font-semibold text-base leading-tight tracking-wide group-hover:text-gold-300 transition-colors duration-300">
@@ -128,40 +153,53 @@ export default function Navbar() {
               </div>
             </Link>
 
-            {/* Desktop Navigation — shared layoutId underline glides between tabs */}
+            {/* Desktop Navigation — host tabs centered; guests use Browse next to profile */}
             <LayoutGroup id="desktop-nav-tabs">
-              <div className="hidden lg:flex items-center gap-10">
-                {links.map((link) => {
-                  const active = isActiveLink(link.href)
-                  return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className={desktopLinkClass(active)}
-                    >
-                      {link.label}
-                      {active && (
-                        <motion.span
-                          layoutId="desktop-nav-underline"
-                          className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-gold-400"
-                          transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                        />
-                      )}
-                    </Link>
-                  )
-                })}
+              <div className="hidden lg:flex flex-1 justify-center items-center gap-10">
+                {isHost &&
+                  hostLinks.map((link) => {
+                    const active = isActiveLink(link.href)
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className={desktopLinkClass(active)}
+                      >
+                        {link.label}
+                        {active && (
+                          <motion.span
+                            layoutId="desktop-nav-underline"
+                            className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-gold-400"
+                            transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                          />
+                        )}
+                      </Link>
+                    )
+                  })}
               </div>
             </LayoutGroup>
 
-            {/* Desktop auth + CTA */}
-            <div className="hidden lg:flex items-center gap-4">
-              <UserAuthNav />
-              {!isHost && (
-                <Button href="/booking" variant="primary" size="sm">
-                  Book Now
-                </Button>
-              )}
-            </div>
+            {/* Desktop Browse (guests) + auth */}
+            <LayoutGroup id="desktop-nav-auth">
+              <div className="hidden lg:flex items-center gap-4 shrink-0">
+                {showBrowse && (
+                  <Link
+                    href="/fleet"
+                    className={desktopLinkClass(isActiveLink('/fleet'))}
+                  >
+                    Browse
+                    {isActiveLink('/fleet') && (
+                      <motion.span
+                        layoutId="desktop-nav-underline-auth"
+                        className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-gold-400"
+                        transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                      />
+                    )}
+                  </Link>
+                )}
+                <UserAuthNav />
+              </div>
+            </LayoutGroup>
 
             {/* Mobile Hamburger */}
             <button
@@ -183,7 +221,7 @@ export default function Navbar() {
         >
           <div className="bg-forest-950/98 border-t border-forest-800/50 backdrop-blur-md px-6 py-8">
             <div className="flex flex-col gap-6">
-              {links.map((link) => (
+              {mobileNavLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -195,19 +233,6 @@ export default function Navbar() {
               ))}
 
               <UserAuthNav mobile />
-              {!isHost && (
-                <div className="pt-2">
-                  <Button
-                    href="/booking"
-                    variant="primary"
-                    size="md"
-                    fullWidth
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    Book Now
-                  </Button>
-                </div>
-              )}
             </div>
           </div>
         </div>

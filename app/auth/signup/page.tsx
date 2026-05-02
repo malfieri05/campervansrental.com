@@ -52,9 +52,7 @@ function SignupForm() {
     <div className="min-h-screen bg-cream-100 pt-8 pb-16 px-6">
       <div className="max-w-md mx-auto bg-cream-50 border border-cream-300/60 rounded-sm p-8 shadow-luxury-sm">
         <h1 className="font-serif text-2xl font-semibold text-charcoal mb-2">Create account</h1>
-        <p className="font-sans text-sm text-charcoal/50 mb-8">
-          Renters: optional until checkout. Hosts: required to list a van.
-        </p>
+        <div className="mb-8" />
         <form onSubmit={onSubmit} className="space-y-5">
           {error && (
             <p className="text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-sm">
