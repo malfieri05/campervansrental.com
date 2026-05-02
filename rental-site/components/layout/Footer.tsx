@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Tent, Instagram, Facebook, Youtube, ArrowRight } from 'lucide-react'
+import { Truck, Instagram, Facebook, Youtube, ArrowRight } from 'lucide-react'
 
 const footerLinks = {
   company: {
@@ -70,7 +70,7 @@ export default function Footer() {
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-3 mb-6 group w-fit">
               <div className="w-9 h-9 bg-gold-400 flex items-center justify-center rounded-sm group-hover:bg-gold-300 transition-colors duration-300">
-                <Tent className="w-5 h-5 text-forest-950" strokeWidth={1.5} />
+                <Truck className="w-5 h-5 text-forest-950" strokeWidth={1.5} />
               </div>
               <div className="flex flex-col">
                 <span className="font-serif text-cream-50 font-semibold text-base leading-tight tracking-wide">

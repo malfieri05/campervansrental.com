@@ -1,11 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MapPin, Users, Ruler, Star, CheckCircle } from 'lucide-react'
 import type { BlockRange } from '@/lib/availability'
 import type { Van } from '@/types'
 import { getCategoryLabel } from '@/lib/data'
-import ListingCalendar from './ListingCalendar'
 import ListingReservePanel from './ListingReservePanel'
 
 interface Props {
@@ -15,9 +14,21 @@ interface Props {
   smoking: boolean
 }
 
+function dayKey(d: Date) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export default function ListingDetailBody({ van, blocks, pets, smoking }: Props) {
   const [checkIn, setCheckIn] = useState<string | null>(null)
   const [checkOut, setCheckOut] = useState<string | null>(null)
+
+  // Fire view increment on mount
+  useEffect(() => {
+    void fetch(`/api/listings/${van.id}/view`, { method: 'POST' }).catch(() => {})
+  }, [van.id])
 
   const handleDateClick = (key: string) => {
     if (!checkIn || (checkIn && checkOut)) {
@@ -37,8 +48,6 @@ export default function ListingDetailBody({ van, blocks, pets, smoking }: Props)
     setCheckIn(null)
     setCheckOut(null)
   }
-
-  const panelProps = { van, checkIn, checkOut, onClearDates: clearDates }
 
   return (
     <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
@@ -78,12 +87,18 @@ export default function ListingDetailBody({ van, blocks, pets, smoking }: Props)
           </div>
         </div>
 
-        {/* Mobile reserve panel — visible early on small screens */}
+        {/* Mobile reserve panel */}
         <div className="lg:hidden">
-          <ListingReservePanel {...panelProps} />
+          <ListingReservePanel
+            van={van}
+            blocks={blocks}
+            checkIn={checkIn}
+            checkOut={checkOut}
+            onDateClick={handleDateClick}
+            onClearDates={clearDates}
+          />
         </div>
 
-        {/* Divider */}
         <div className="h-px bg-gradient-to-r from-gold-400/30 via-gold-400/15 to-transparent" />
 
         {/* Description */}
@@ -94,7 +109,7 @@ export default function ListingDetailBody({ van, blocks, pets, smoking }: Props)
           </div>
         )}
 
-        {/* Features as pills */}
+        {/* Features */}
         {van.features.length > 0 && (
           <div>
             <h2 className="font-serif text-2xl font-semibold text-charcoal mb-4">Features</h2>
@@ -112,7 +127,7 @@ export default function ListingDetailBody({ van, blocks, pets, smoking }: Props)
           </div>
         )}
 
-        {/* Amenities as pills */}
+        {/* Amenities */}
         {van.amenities.length > 0 && (
           <div>
             <h2 className="font-serif text-2xl font-semibold text-charcoal mb-4">Amenities</h2>
@@ -155,33 +170,19 @@ export default function ListingDetailBody({ van, blocks, pets, smoking }: Props)
           </div>
         </div>
 
-        {/* Availability calendar */}
-        <div>
-          <h2 className="font-serif text-2xl font-semibold text-charcoal mb-2">Availability</h2>
-          <p className="font-sans text-sm text-charcoal/50 mb-4">
-            {!checkIn
-              ? 'Click a date to set your check-in, then click another for check-out.'
-              : !checkOut
-              ? 'Now select your check-out date.'
-              : `${checkIn} → ${checkOut} selected. Adjust or continue to reserve.`}
-          </p>
-          <div className="bg-cream-50 border border-cream-300/50 rounded-2xl p-5 shadow-luxury-sm">
-            <ListingCalendar
-              blocks={blocks}
-              readOnly={false}
-              checkIn={checkIn}
-              checkOut={checkOut}
-              onDateClick={handleDateClick}
-            />
-          </div>
-        </div>
-
       </div>
 
       {/* ── Right: sticky reserve panel (desktop) ─────────── */}
       <div className="hidden lg:block lg:col-span-5 xl:col-span-4">
         <div className="sticky top-24">
-          <ListingReservePanel {...panelProps} />
+          <ListingReservePanel
+            van={van}
+            blocks={blocks}
+            checkIn={checkIn}
+            checkOut={checkOut}
+            onDateClick={handleDateClick}
+            onClearDates={clearDates}
+          />
         </div>
       </div>
 

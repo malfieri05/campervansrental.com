@@ -1,11 +1,42 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { getBlockedRangesForListing } from '@/lib/availability'
+import { createHmac } from 'crypto'
 import HostCalendarClient from './HostCalendarClient'
 
-type HostListing = {
+export type HostListingMeta = {
   id: string
   title: string
   slug: string
+  price_per_night_cents: number | null
+  primary_image_url: string | null
+}
+
+export type CalendarReservation = {
+  id: string
+  start_date: string
+  end_date: string
+  status: string
+  guest_first_name: string | null
+  guest_last_name: string | null
+}
+
+export type ExternalFeed = {
+  id: string
+  display_name: string
+  ical_url: string
+  last_synced_at: string | null
+  last_sync_error: string | null
+}
+
+export type BlockRow = {
+  start_date: string
+  end_date: string
+  block_type: string
+}
+
+function makeExportToken(listingId: string): string | null {
+  const secret = process.env.CALENDAR_EXPORT_SECRET
+  if (!secret) return null
+  return createHmac('sha256', secret).update(listingId).digest('hex')
 }
 
 export default async function HostCalendarPage() {
@@ -17,23 +48,67 @@ export default async function HostCalendarPage() {
   } = await supabase.auth.getUser()
   if (!user) return null
 
+  // Listings with primary image + nightly rate
   const { data: rawListings } = await supabase
     .from('listings')
-    .select('id, title, slug')
+    .select(`
+      id, title, slug, price_per_night_cents,
+      listing_images ( url, sort_order )
+    `)
     .eq('owner_id', user.id)
     .order('updated_at', { ascending: false })
 
-  const listings = (rawListings ?? []) as HostListing[]
+  const listings: HostListingMeta[] = (rawListings ?? []).map((l) => {
+    const images = (l.listing_images ?? []) as { url: string; sort_order: number }[]
+    images.sort((a, b) => a.sort_order - b.sort_order)
+    return {
+      id: l.id as string,
+      title: l.title as string,
+      slug: l.slug as string,
+      price_per_night_cents: (l.price_per_night_cents as number | null) ?? null,
+      primary_image_url: images[0]?.url ?? null,
+    }
+  })
 
-  // Pre-fetch blocks for the first listing (server-side for initial paint)
   const firstListing = listings[0] ?? null
-  const initialBlocks = firstListing ? await getBlockedRangesForListing(firstListing.id) : []
+
+  // Parallel: blocks + reservations + external feeds for first listing
+  const [blocksRes, reservationsRes, feedsRes] = firstListing
+    ? await Promise.all([
+        supabase
+          .from('availability_blocks')
+          .select('start_date, end_date, block_type')
+          .eq('listing_id', firstListing.id)
+          .order('start_date', { ascending: true }),
+        supabase
+          .from('reservations')
+          .select('id, start_date, end_date, status, guest_first_name, guest_last_name')
+          .eq('listing_id', firstListing.id)
+          .order('start_date', { ascending: true }),
+        supabase
+          .from('listing_external_calendars')
+          .select('id, display_name, ical_url, last_synced_at, last_sync_error')
+          .eq('listing_id', firstListing.id)
+          .order('created_at', { ascending: true }),
+      ])
+    : [{ data: [] }, { data: [] }, { data: [] }]
+
+  const initialBlocks = (blocksRes.data ?? []) as BlockRow[]
+  const initialReservations = (reservationsRes.data ?? []) as CalendarReservation[]
+  const initialFeeds = (feedsRes.data ?? []) as ExternalFeed[]
+
+  const exportToken = firstListing ? makeExportToken(firstListing.id) : null
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? ''
 
   return (
     <HostCalendarClient
       listings={listings}
       initialListingId={firstListing?.id ?? null}
       initialBlocks={initialBlocks}
+      initialReservations={initialReservations}
+      initialFeeds={initialFeeds}
+      exportToken={exportToken}
+      siteUrl={siteUrl}
     />
   )
 }

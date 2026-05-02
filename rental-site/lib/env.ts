@@ -27,6 +27,16 @@ export function isStripeConfigured(): boolean {
   return Boolean(process.env.STRIPE_SECRET_KEY)
 }
 
+/**
+ * Show “Connect Stripe” for hosts on /account. Set NEXT_PUBLIC_STRIPE_HOST_CONNECT=false
+ * when your platform Stripe account cannot use Connect yet (e.g. dashboard blocks it until Atlas).
+ */
+export function isStripeHostConnectOffered(): boolean {
+  const v = process.env.NEXT_PUBLIC_STRIPE_HOST_CONNECT?.trim().toLowerCase()
+  if (v === 'false' || v === '0' || v === 'no') return false
+  return true
+}
+
 export function isStripeWebhookConfigured(): boolean {
   return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET)
 }

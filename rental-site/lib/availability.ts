@@ -4,7 +4,7 @@ import { isSupabaseConfigured } from '@/lib/env'
 export type BlockRange = {
   start: string
   end: string
-  type: 'host_blocked' | 'confirmed_reservation'
+  type: 'host_blocked' | 'confirmed_reservation' | 'external_sync'
 }
 
 export async function getBlockedRangesForListing(
