@@ -27,7 +27,8 @@ type Props = {
   filters: TripStatusFilter
   pricePerNight: number | null
   onReservationClick: (id: string) => void
-  onOpenAvailability: () => void
+  /** yyyy-MM-dd — opens Update availability for that calendar day */
+  onDayClick: (isoDate: string) => void
 }
 
 type StatusCategory = 'pending' | 'confirmed_upcoming' | 'currently_hosting' | 'completed'
@@ -60,9 +61,6 @@ const STATUS_LABELS: Record<StatusCategory, string> = {
   currently_hosting:  'Hosting',
   completed:          'Completed',
 }
-
-// External sync / host block bar styles
-const BLOCK_BAR_STYLE = 'bg-red-50 border-l-2 border-red-300 text-red-500'
 
 function getMonthWeeks(monthStart: Date): Date[][] {
   const start = startOfWeek(monthStart, { weekStartsOn: 0 })
@@ -111,7 +109,7 @@ export default function HostScheduleGrid({
   filters,
   pricePerNight,
   onReservationClick,
-  onOpenAvailability,
+  onDayClick,
 }: Props) {
   const today = useMemo(() => {
     const d = new Date(); d.setHours(0, 0, 0, 0); return d
@@ -140,36 +138,29 @@ export default function HostScheduleGrid({
   , [reservations, filters])
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white">
       {months.map((monthStart) => {
         const weeks = getMonthWeeks(monthStart)
 
         return (
           <section key={monthStart.toISOString()} className="border-b border-neutral-200 last:border-b-0">
-            {/* Month + Update availability header */}
-            <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-neutral-200 sticky top-0 z-10">
-              <h2 className="text-base font-bold text-neutral-800">
-                {format(monthStart, 'MMMM yyyy')}
-              </h2>
-              <button
-                type="button"
-                onClick={onOpenAvailability}
-                className="rounded-full bg-brand-gold px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-gold/90 transition-colors"
-              >
-                Update availability
-              </button>
-            </div>
-
-            {/* Day-of-week header */}
-            <div className="grid grid-cols-7 border-b border-neutral-200">
-              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-                <div
-                  key={i}
-                  className="py-2 text-center text-[11px] font-semibold uppercase tracking-wider text-neutral-400 border-r border-neutral-100 last:border-r-0"
-                >
-                  {d}
-                </div>
-              ))}
+            {/* One sticky block (title + weekday row) so scrolling week rows / bars never paint over it */}
+            <div className="sticky top-0 z-40 isolate border-b border-neutral-200 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+              <div className="px-6 py-3.5">
+                <h2 className="text-base font-bold text-neutral-800">
+                  {format(monthStart, 'MMMM yyyy')}
+                </h2>
+              </div>
+              <div className="grid grid-cols-7 border-t border-neutral-100">
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                  <div
+                    key={i}
+                    className="bg-white py-2 text-center text-[11px] font-semibold uppercase tracking-wider text-neutral-400 border-r border-neutral-100 last:border-r-0"
+                  >
+                    {d}
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Week rows */}
@@ -186,7 +177,7 @@ export default function HostScheduleGrid({
               })
 
               return (
-                <div key={wi} className="relative grid grid-cols-7 border-b border-neutral-100 last:border-b-0">
+                <div key={wi} className="relative z-0 grid grid-cols-7 border-b border-neutral-100 last:border-b-0">
                   {/* Date cells */}
                   {weekDays.map((day, di) => {
                     const isCurrentMonth = isSameMonth(day, monthStart)
@@ -194,20 +185,30 @@ export default function HostScheduleGrid({
                     const dateStr = format(day, 'yyyy-MM-dd')
                     const isBlocked = blockedDates.has(dateStr)
 
+                    const hoverTint = !isCurrentMonth
+                      ? 'hover:bg-neutral-200/50'
+                      : isBlocked
+                        ? 'hover:bg-red-50/70'
+                        : 'hover:bg-neutral-100'
+
                     return (
-                      <div
+                      <button
                         key={di}
+                        type="button"
+                        onClick={() => onDayClick(dateStr)}
                         className={[
-                          'relative min-h-[96px] border-r border-neutral-100 last:border-r-0 px-2 pt-2 pb-1.5 flex flex-col',
-                          !isCurrentMonth ? 'bg-neutral-50' : isBlocked ? 'bg-red-50/40' : 'bg-white',
+                          'relative min-h-[96px] border-r border-neutral-100 px-2 pt-2 pb-1.5 text-left outline-none ring-inset transition-colors duration-150 last:border-r-0 focus-visible:ring-2 focus-visible:ring-gold-400/70 flex flex-col',
+                          hoverTint,
+                          !isCurrentMonth ? 'cursor-pointer bg-neutral-50' : isBlocked ? 'cursor-pointer bg-red-50/40' : 'cursor-pointer bg-white',
                         ].join(' ')}
+                        aria-label={`Update availability starting ${format(day, 'MMMM d, yyyy')}`}
                       >
                         {/* Day number */}
                         <span
                           className={[
-                            'text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full shrink-0',
+                            'pointer-events-none text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full shrink-0',
                             isToday
-                              ? 'bg-brand-gold text-white'
+                              ? 'bg-gold-400 text-white ring-1 ring-gold-600/40'
                               : !isCurrentMonth
                                 ? 'text-neutral-300'
                                 : isBlocked
@@ -219,15 +220,15 @@ export default function HostScheduleGrid({
                         </span>
 
                         {/* Spacer to push price down */}
-                        <div className="flex-1" />
+                        <div className="pointer-events-none flex-1 min-h-[8px]" />
 
                         {/* Nightly rate — bottom of cell */}
                         {isCurrentMonth && pricePerNight != null && (
-                          <span className="text-[11px] text-neutral-400 self-end font-medium">
+                          <span className="pointer-events-none text-[11px] text-neutral-400 self-end font-medium">
                             {formatNightlyRate(pricePerNight)}
                           </span>
                         )}
-                      </div>
+                      </button>
                     )
                   })}
 
