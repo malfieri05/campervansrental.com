@@ -54,7 +54,7 @@ export default function HostCalendarSidebar({
 
   return (
     <>
-      <aside className="w-full lg:w-[280px] lg:shrink-0 flex flex-col gap-0 bg-white border-r border-neutral-200 min-h-0 lg:min-h-screen">
+      <aside className="flex w-full shrink-0 flex-col gap-0 border-b border-neutral-200 bg-white lg:h-full lg:min-h-0 lg:w-[280px] lg:shrink-0 lg:border-b-0 lg:border-r lg:overflow-y-auto">
         {/* Header */}
         <div className="px-5 pt-6 pb-4 border-b border-neutral-100">
           <h1 className="text-xl font-bold text-neutral-900 tracking-tight">Calendar</h1>
@@ -127,7 +127,7 @@ export default function HostCalendarSidebar({
           <button
             type="button"
             onClick={onOpenAvailability}
-            className="mt-3 w-full rounded-xl bg-brand-gold py-2.5 text-sm font-semibold text-white hover:bg-brand-gold/90 transition-colors"
+            className="mt-3 w-full rounded-xl bg-gold-400 py-2.5 text-sm font-semibold text-white shadow-gold ring-1 ring-gold-600/30 hover:bg-gold-300 transition-colors"
           >
             Update availability
           </button>
@@ -181,7 +181,7 @@ export default function HostCalendarSidebar({
             <button
               type="button"
               onClick={() => setSyncModalOpen(true)}
-              className="flex items-center gap-1.5 text-sm text-brand-gold hover:text-brand-gold/80 font-medium transition-colors"
+              className="flex items-center gap-1.5 text-sm font-medium text-gold-700 hover:text-gold-600 transition-colors"
             >
               <CalendarClock className="h-4 w-4" />
               Connect a calendar
@@ -198,7 +198,7 @@ export default function HostCalendarSidebar({
                 <button
                   type="button"
                   onClick={() => setSyncModalOpen(true)}
-                  className="text-xs text-brand-gold hover:underline mt-0.5"
+                  className="text-xs text-gold-700 hover:underline mt-0.5"
                 >
                   Manage
                 </button>

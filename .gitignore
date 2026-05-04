@@ -20,3 +20,6 @@ yarn-error.log*
 # typescript
 next-env.d.ts
 *.tsbuildinfo
+
+# Supabase CLI link metadata (local only)
+supabase/.temp/

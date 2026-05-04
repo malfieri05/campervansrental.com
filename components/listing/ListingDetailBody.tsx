@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { MapPin, Users, Ruler, Star, CheckCircle } from 'lucide-react'
+import { MapPin, Users, Ruler, Star, CheckCircle, FileText } from 'lucide-react'
 import type { BlockRange } from '@/lib/availability'
 import type { Van } from '@/types'
 import { getCategoryLabel } from '@/lib/data'
 import ListingReservePanel from './ListingReservePanel'
+import ListingInlineChat from './ListingInlineChat'
 
 interface Props {
   van: Van
@@ -169,6 +170,36 @@ export default function ListingDetailBody({ van, blocks, pets, smoking }: Props)
             ))}
           </div>
         </div>
+
+        {/* Inline chatbot (optional, host-toggled) */}
+        {van.listingChatbotEnabled && (
+          <ListingInlineChat slug={van.id} />
+        )}
+
+        {/* Pick-up & drop-off (optional host content) */}
+        {(van.pickupDropoffRulesText?.trim() || van.pickupDropoffRulesDocUrl?.trim()) && (
+          <div>
+            <h2 className="font-serif text-2xl font-semibold text-charcoal mb-4">
+              Pick-up &amp; drop-off
+            </h2>
+            {van.pickupDropoffRulesDocUrl?.trim() && (
+              <a
+                href={van.pickupDropoffRulesDocUrl.trim()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mb-4 inline-flex items-center gap-2 rounded-xl border border-gold-400/40 bg-cream-50 px-4 py-3 text-sm font-medium text-gold-800 hover:bg-cream-100"
+              >
+                <FileText className="h-4 w-4 shrink-0 text-gold-600" />
+                View pickup &amp; drop-off document
+              </a>
+            )}
+            {van.pickupDropoffRulesText?.trim() && (
+              <p className="font-sans text-base text-charcoal/70 leading-relaxed whitespace-pre-wrap">
+                {van.pickupDropoffRulesText.trim()}
+              </p>
+            )}
+          </div>
+        )}
 
       </div>
 

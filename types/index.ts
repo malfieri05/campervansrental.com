@@ -36,6 +36,12 @@ export interface Van {
   faqs?: FAQ[]
   tripRecommendations?: string | null
   youtubeVideoUrl?: string | null
+  /** Optional host pickup / drop-off copy shown on listing detail */
+  pickupDropoffRulesText?: string | null
+  /** Optional URL to uploaded rules PDF/image */
+  pickupDropoffRulesDocUrl?: string | null
+  /** Whether host has enabled the per-listing chatbot */
+  listingChatbotEnabled?: boolean
 }
 
 export interface Amenity {

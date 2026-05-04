@@ -162,7 +162,7 @@ export default function CalendarSyncModal({ listingId, feeds, exportUrl, onClose
 
             {/* Add calendar form */}
             {showAddForm ? (
-              <div className="mt-3 rounded-xl border border-brand-gold/30 bg-amber-50/50 p-4 space-y-3">
+              <div className="mt-3 rounded-xl border border-gold-400/40 bg-amber-50/50 p-4 space-y-3">
                 <p className="text-xs font-semibold text-neutral-700">Add calendar</p>
                 <div className="space-y-2">
                   <input
@@ -170,14 +170,14 @@ export default function CalendarSyncModal({ listingId, feeds, exportUrl, onClose
                     placeholder="Name (e.g. Airbnb, Outdoorsy)"
                     value={addName}
                     onChange={(e) => setAddName(e.target.value)}
-                    className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 focus:border-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold"
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 focus:border-gold-400 focus:outline-none focus:ring-1 focus:ring-gold-400/50"
                   />
                   <input
                     type="url"
                     placeholder="https://… (iCal URL)"
                     value={addUrl}
                     onChange={(e) => setAddUrl(e.target.value)}
-                    className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 focus:border-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold"
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 focus:border-gold-400 focus:outline-none focus:ring-1 focus:ring-gold-400/50"
                   />
                 </div>
                 {addError && <p className="text-xs text-red-600">{addError}</p>}
@@ -193,7 +193,7 @@ export default function CalendarSyncModal({ listingId, feeds, exportUrl, onClose
                     type="button"
                     onClick={handleAdd}
                     disabled={adding}
-                    className="flex-1 rounded-xl bg-brand-gold py-2 text-sm font-semibold text-white hover:bg-brand-gold/90 transition-colors disabled:opacity-40"
+                    className="flex-1 rounded-xl bg-gold-400 py-2 text-sm font-semibold text-white shadow-gold hover:bg-gold-300 transition-colors disabled:opacity-40"
                   >
                     {adding ? 'Adding…' : 'Add'}
                   </button>
@@ -202,7 +202,7 @@ export default function CalendarSyncModal({ listingId, feeds, exportUrl, onClose
             ) : (
               <button
                 onClick={() => setShowAddForm(true)}
-                className="mt-3 flex items-center gap-1.5 text-sm font-medium text-brand-gold hover:text-brand-gold/80 transition-colors"
+                className="mt-3 flex items-center gap-1.5 text-sm font-medium text-gold-700 hover:text-gold-600 transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 Add a calendar

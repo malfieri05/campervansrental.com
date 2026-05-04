@@ -123,6 +123,12 @@ export type ListingDraftInput = {
   // Availability settings
   lead_time_days?: number | null
   buffer_days?: number | null
+  // Pick-up / drop-off (optional public-facing)
+  pickup_dropoff_rules_text?: string | null
+  pickup_dropoff_rules_doc_url?: string | null
+  // Chatbot
+  listing_chatbot_enabled?: boolean
+  listing_chatbot_notes?: string | null
 }
 
 // ─── Create draft ─────────────────────────────────────────────────────────────
@@ -383,6 +389,14 @@ export async function addHostAvailabilityBlock(
   } = await supabase.auth.getUser()
   if (!user) return { ok: false, error: 'Unauthorized' }
 
+  const { data: listing } = await supabase
+    .from('listings')
+    .select('id')
+    .eq('id', listingId)
+    .eq('owner_id', user.id)
+    .maybeSingle()
+  if (!listing) return { ok: false, error: 'Listing not found' }
+
   const { error } = await supabase.from('availability_blocks').insert({
     listing_id: listingId,
     start_date: startDate,
@@ -391,6 +405,7 @@ export async function addHostAvailabilityBlock(
   })
 
   if (error) return { ok: false, error: error.message }
+  revalidatePath('/host/calendar')
   revalidatePath(`/host/listings/${listingId}/edit`)
   revalidatePath('/listings')
   return { ok: true }
@@ -410,6 +425,7 @@ export async function removeHostAvailabilityBlock(
     .eq('block_type', 'host_blocked')
 
   if (error) return { ok: false, error: error.message }
+  revalidatePath('/host/calendar')
   revalidatePath(`/host/listings/${listingId}/edit`)
   return { ok: true }
 }
@@ -477,7 +493,8 @@ export async function getHostListingForEdit(
       `
       *,
       listing_images ( id, url, sort_order ),
-      availability_blocks ( id, start_date, end_date, block_type )
+      availability_blocks ( id, start_date, end_date, block_type ),
+      listing_chat_documents ( id, listing_id, storage_path, public_url, mime_type, original_filename, processing_status, error_message, created_at )
     `
     )
     .eq('id', listingId)

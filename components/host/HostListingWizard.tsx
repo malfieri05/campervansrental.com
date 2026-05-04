@@ -36,6 +36,14 @@ import AddOnsStep from './wizard/steps/AddOnsStep'
 import PoliciesStep from './wizard/steps/PoliciesStep'
 import CalendarStep from './wizard/steps/CalendarStep'
 import ReviewStep from './wizard/steps/ReviewStep'
+import PickupDropoffRulesStep from './wizard/steps/PickupDropoffRulesStep'
+import ListingChatbotStep from './wizard/steps/ListingChatbotStep'
+import {
+  addListingChatDocument,
+  deleteListingChatDocument,
+  type ChatDocument,
+} from '@/app/host/listings/chatbot-actions'
+import { Bot } from 'lucide-react'
 
 // ─── Step definitions ──────────────────────────────────────────────────────────
 
@@ -51,7 +59,13 @@ const STEPS = [
   { label: 'Policies',    desc: 'Trip times, booking settings & house rules' },
   { label: 'Calendar',    desc: 'Block dates & booking constraints' },
   { label: 'Review',      desc: 'Review everything & go live' },
+  { label: 'Pick-Up / Drop-Off Rules', desc: 'Optional pickup & return instructions for renters' },
+  { label: 'Listing assistant',        desc: 'AI chatbot knowledge base for your listing' },
 ]
+
+/** Explicit step indices for the two far-right special tabs */
+const PICKUP_STEP_INDEX  = 11
+const CHATBOT_STEP_INDEX = 12
 
 type BlockRow = { id: string; start_date: string; end_date: string; block_type: string }
 
@@ -69,6 +83,7 @@ export default function HostListingWizard({
   const [pending, startTransition] = useTransition()
   const [message, setMessage] = useState<string | null>(null)
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null)
+  const [uploadingPickupDropoff, setUploadingPickupDropoff] = useState(false)
 
   // ── Step 0: Vehicle ────────────────────────────────────────────────────────
   const [vehicleClass, setVehicleClass] = useState(String(initial.vehicle_class ?? 'Class B / Campervan'))
@@ -221,6 +236,25 @@ export default function HostListingWizard({
   const [leadTimeDays, setLeadTimeDays] = useState(Number(initial.lead_time_days ?? 1))
   const [bufferDays, setBufferDays] = useState(Number(initial.buffer_days ?? 0))
 
+  const [pickupDropoffRulesText, setPickupDropoffRulesText] = useState(
+    String(initial.pickup_dropoff_rules_text ?? '')
+  )
+  const [pickupDropoffDocUrl, setPickupDropoffDocUrl] = useState(
+    String(initial.pickup_dropoff_rules_doc_url ?? '')
+  )
+
+  // ── Step 12: Listing chatbot ────────────────────────────────────────────────
+  const [chatbotEnabled, setChatbotEnabled] = useState(
+    Boolean(initial.listing_chatbot_enabled ?? false)
+  )
+  const [chatbotNotes, setChatbotNotes] = useState(
+    String(initial.listing_chatbot_notes ?? '')
+  )
+  const [chatbotDocs, setChatbotDocs] = useState<ChatDocument[]>(
+    (initial.listing_chat_documents as ChatDocument[] | undefined) ?? []
+  )
+  const [uploadingChatbot, setUploadingChatbot] = useState(false)
+
   const calendarBlocks: BlockRange[] = useMemo(() => {
     const raw = (initial.availability_blocks as BlockRow[] | undefined) ?? []
     return raw.map((b) => ({
@@ -314,6 +348,11 @@ export default function HostListingWizard({
       // Calendar
       lead_time_days: leadTimeDays,
       buffer_days: bufferDays,
+      pickup_dropoff_rules_text: pickupDropoffRulesText.trim() || null,
+      pickup_dropoff_rules_doc_url: pickupDropoffDocUrl.trim() || null,
+      // Chatbot
+      listing_chatbot_enabled: chatbotEnabled,
+      listing_chatbot_notes: chatbotNotes.trim() || null,
     })
 
   // ─── Navigation ────────────────────────────────────────────────────────────
@@ -419,6 +458,63 @@ export default function HostListingWizard({
     setUploadingDoc(null)
   }
 
+  const onUploadPickupDropoffDoc = async (file: File) => {
+    if (!isSupabaseConfigured()) { setMessage('Supabase not configured'); return }
+    setUploadingPickupDropoff(true)
+    const supabase = createClient()
+    const ext = file.name.split('.').pop() || 'pdf'
+    const userId = (await supabase.auth.getUser()).data.user?.id
+    const path = `${userId}/${listingId}/docs/pickup-dropoff-${crypto.randomUUID()}.${ext}`
+    const { error } = await supabase.storage.from('listing-images').upload(path, file, {
+      upsert: false,
+      contentType: file.type || 'application/octet-stream',
+    })
+    if (error) { setMessage(error.message); setUploadingPickupDropoff(false); return }
+    const { data: { publicUrl } } = supabase.storage.from('listing-images').getPublicUrl(path)
+    setPickupDropoffDocUrl(publicUrl)
+    setUploadingPickupDropoff(false)
+  }
+
+  const onUploadChatbotDoc = async (file: File) => {
+    if (!isSupabaseConfigured()) { setMessage('Supabase not configured'); return }
+    setUploadingChatbot(true)
+    const supabase = createClient()
+    const ext = file.name.split('.').pop() || 'pdf'
+    const userId = (await supabase.auth.getUser()).data.user?.id
+    const storagePath = `${userId}/${listingId}/chat-knowledge/${crypto.randomUUID()}.${ext}`
+    const { error } = await supabase.storage.from('listing-images').upload(storagePath, file, {
+      upsert: false,
+      contentType: file.type || 'application/octet-stream',
+    })
+    if (error) { setMessage(error.message); setUploadingChatbot(false); return }
+    const { data: { publicUrl } } = supabase.storage.from('listing-images').getPublicUrl(storagePath)
+
+    // Create DB record
+    const res = await addListingChatDocument(listingId, storagePath, publicUrl, file.type, file.name)
+    if (!res.id) { setMessage(res.error ?? 'Could not save document'); setUploadingChatbot(false); return }
+
+    // Trigger background ingest
+    fetch('/api/host/chatbot/ingest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ documentId: res.id, listingId, publicUrl }),
+    }).catch(() => {})
+
+    setChatbotDocs((prev) => [
+      { id: res.id!, listing_id: listingId, storage_path: storagePath, public_url: publicUrl,
+        mime_type: file.type, original_filename: file.name, processing_status: 'pending',
+        error_message: null, created_at: new Date().toISOString() },
+      ...prev,
+    ])
+    setUploadingChatbot(false)
+  }
+
+  const onDeleteChatbotDoc = async (doc: ChatDocument) => {
+    const res = await deleteListingChatDocument(doc.id, listingId)
+    if (!res.ok) { setMessage(res.error ?? 'Delete failed'); return }
+    setChatbotDocs((prev) => prev.filter((d) => d.id !== doc.id))
+  }
+
   // ─── Derived ───────────────────────────────────────────────────────────────
 
   const coverThumb =
@@ -487,30 +583,63 @@ export default function HostListingWizard({
             </div>
           </div>
 
-          {/* Tab bar */}
+          {/* Tab bar: primary steps + Pick-Up / Drop-Off aligned right */}
           <nav
-            className="mt-4 flex flex-wrap gap-x-0 gap-y-0 border-t border-neutral-200 pt-3 -mb-px pb-px"
+            className="mt-4 flex flex-wrap items-end justify-between gap-y-1 border-t border-neutral-200 pt-3 -mb-px pb-px"
             aria-label="Listing sections"
           >
-            {STEPS.map((s, i) => {
-              const active = i === step
-              return (
-                <button
-                  key={s.label}
-                  type="button"
-                  onClick={() => onTabSelect(i)}
-                  disabled={pending}
-                  className={[
-                    'border-b-2 px-2.5 py-2.5 text-sm transition sm:px-3.5',
-                    active
-                      ? 'border-neutral-900 font-semibold text-neutral-900'
-                      : 'border-transparent font-medium text-neutral-400 hover:text-neutral-600',
-                  ].join(' ')}
-                >
-                  {s.label}
-                </button>
-              )
-            })}
+            <div className="flex min-w-0 flex-1 flex-wrap gap-x-0 gap-y-0">
+              {STEPS.slice(0, PICKUP_STEP_INDEX).map((s, i) => {
+                const active = i === step
+                return (
+                  <button
+                    key={s.label}
+                    type="button"
+                    onClick={() => onTabSelect(i)}
+                    disabled={pending}
+                    className={[
+                      'border-b-2 px-2.5 py-2.5 text-sm transition sm:px-3.5',
+                      active
+                        ? 'border-neutral-900 font-semibold text-neutral-900'
+                        : 'border-transparent font-medium text-neutral-400 hover:text-neutral-600',
+                    ].join(' ')}
+                  >
+                    {s.label}
+                  </button>
+                )
+              })}
+            </div>
+            {/* Pick-Up / Drop-Off */}
+            <button
+              type="button"
+              onClick={() => onTabSelect(PICKUP_STEP_INDEX)}
+              disabled={pending}
+              className={[
+                'shrink-0 border-b-2 px-2.5 py-2.5 text-sm transition sm:px-3.5',
+                step === PICKUP_STEP_INDEX
+                  ? 'border-neutral-900 font-semibold text-neutral-900'
+                  : 'border-transparent font-medium text-neutral-400 hover:text-neutral-600',
+              ].join(' ')}
+            >
+              {STEPS[PICKUP_STEP_INDEX].label}
+            </button>
+
+            {/* Chatbot icon tab */}
+            <button
+              type="button"
+              onClick={() => onTabSelect(CHATBOT_STEP_INDEX)}
+              disabled={pending}
+              aria-label="Listing assistant"
+              title="Listing assistant chatbot"
+              className={[
+                'shrink-0 border-b-2 px-2.5 py-2.5 transition',
+                step === CHATBOT_STEP_INDEX
+                  ? 'border-neutral-900 text-neutral-900'
+                  : 'border-transparent text-neutral-400 hover:text-neutral-600',
+              ].join(' ')}
+            >
+              <Bot className="h-5 w-5" />
+            </button>
           </nav>
         </div>
 
@@ -647,6 +776,32 @@ export default function HostListingWizard({
                 if (!r.ok) setMessage(r.error ?? 'Remove failed')
                 else router.refresh()
               }}
+            />
+          )}
+
+          {step === CHATBOT_STEP_INDEX && (
+            <ListingChatbotStep
+              listingId={listingId}
+              chatbotEnabled={chatbotEnabled}
+              setChatbotEnabled={setChatbotEnabled}
+              chatbotNotes={chatbotNotes}
+              setChatbotNotes={setChatbotNotes}
+              documents={chatbotDocs}
+              setDocuments={setChatbotDocs}
+              uploading={uploadingChatbot}
+              onUploadDoc={onUploadChatbotDoc}
+              onDeleteDoc={onDeleteChatbotDoc}
+            />
+          )}
+
+          {step === PICKUP_STEP_INDEX && (
+            <PickupDropoffRulesStep
+              rulesText={pickupDropoffRulesText}
+              setRulesText={setPickupDropoffRulesText}
+              docUrl={pickupDropoffDocUrl}
+              setDocUrl={setPickupDropoffDocUrl}
+              uploading={uploadingPickupDropoff}
+              onUploadDoc={onUploadPickupDropoffDoc}
             />
           )}
 

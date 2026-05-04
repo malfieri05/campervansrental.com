@@ -29,6 +29,9 @@ type ListingRow = {
   listing_faqs?: FAQ[] | null
   trip_recommendations?: string | null
   youtube_video_url?: string | null
+  pickup_dropoff_rules_text?: string | null
+  pickup_dropoff_rules_doc_url?: string | null
+  listing_chatbot_enabled?: boolean | null
 }
 
 function mapStaticVan(v: Van): Van {
@@ -72,6 +75,9 @@ function mapRowToVan(row: ListingRow): Van {
     faqs: Array.isArray(row.listing_faqs) ? row.listing_faqs : [],
     tripRecommendations: row.trip_recommendations ?? null,
     youtubeVideoUrl: row.youtube_video_url ?? null,
+    pickupDropoffRulesText: row.pickup_dropoff_rules_text ?? null,
+    pickupDropoffRulesDocUrl: row.pickup_dropoff_rules_doc_url ?? null,
+    listingChatbotEnabled: Boolean(row.listing_chatbot_enabled),
   }
 }
 
@@ -113,6 +119,9 @@ export async function getPublishedListings(): Promise<Van[]> {
       listing_faqs,
       trip_recommendations,
       youtube_video_url,
+      pickup_dropoff_rules_text,
+      pickup_dropoff_rules_doc_url,
+      listing_chatbot_enabled,
       listing_images (url, sort_order)
     `
       )
@@ -169,6 +178,9 @@ export async function getPublishedListingBySlug(slug: string): Promise<Van | nul
       listing_faqs,
       trip_recommendations,
       youtube_video_url,
+      pickup_dropoff_rules_text,
+      pickup_dropoff_rules_doc_url,
+      listing_chatbot_enabled,
       listing_images (url, sort_order)
     `
       )
