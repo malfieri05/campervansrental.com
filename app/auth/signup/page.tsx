@@ -4,7 +4,7 @@ import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { isSupabaseConfigured } from '@/lib/env'
+import { getSupabaseUnavailableReason, isSupabaseConfigured } from '@/lib/env'
 import Button from '@/components/ui/Button'
 
 function SignupForm() {
@@ -22,7 +22,8 @@ function SignupForm() {
     setError(null)
     if (!isSupabaseConfigured()) {
       setError(
-        'Sign-up needs a live Supabase project. Turn off NEXT_PUBLIC_SUPABASE_OFFLINE and set valid Supabase URL and anon key in .env.'
+        getSupabaseUnavailableReason() ??
+          'Sign-up requires Supabase. Configure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY, then redeploy.'
       )
       return
     }

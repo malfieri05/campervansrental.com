@@ -4,7 +4,7 @@ import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { isSupabaseConfigured } from '@/lib/env'
+import { getSupabaseUnavailableReason, isSupabaseConfigured } from '@/lib/env'
 import Button from '@/components/ui/Button'
 
 function LoginForm() {
@@ -21,7 +21,8 @@ function LoginForm() {
     setError(null)
     if (!isSupabaseConfigured()) {
       setError(
-        'Sign-in needs a live Supabase project. Set NEXT_PUBLIC_SUPABASE_OFFLINE=false and valid NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY, or leave offline mode for static browsing only.'
+        getSupabaseUnavailableReason() ??
+          'Sign-in requires Supabase. Configure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY, then redeploy.'
       )
       return
     }
