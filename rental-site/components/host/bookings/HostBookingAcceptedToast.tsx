@@ -10,7 +10,7 @@ export default function HostBookingAcceptedToast() {
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
-    let hide: ReturnType<typeof window.setTimeout> | undefined
+    let hide: number | undefined
     const onAccept = () => {
       if (hide) window.clearTimeout(hide)
       setOpen(true)

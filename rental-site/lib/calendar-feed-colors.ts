@@ -39,6 +39,16 @@ const FEED_COLOR_THEMES: FeedColorTheme[] = [
   },
 ]
 
+/** Tailwind JIT: allow feed theme classes used via getFeedColorTheme(). */
+export const CALENDAR_FEED_COLOR_SAFELIST: string[] = (() => {
+  const out = new Set<string>()
+  for (const t of FEED_COLOR_THEMES) {
+    for (const c of t.dotClass.split(/\s+/)) if (c) out.add(c)
+    for (const c of t.barClass.split(/\s+/)) if (c) out.add(c)
+  }
+  return Array.from(out)
+})()
+
 export function getFeedColorTheme(index: number): FeedColorTheme {
   return FEED_COLOR_THEMES[index % FEED_COLOR_THEMES.length]
 }

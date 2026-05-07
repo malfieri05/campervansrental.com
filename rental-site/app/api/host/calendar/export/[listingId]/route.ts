@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
-import { buildHostCalendarExportUrl, makeCalendarExportToken } from '@/lib/host-calendar-export-url'
+import { makeCalendarExportToken } from '@/lib/host-calendar-export-url'
 
 /**
  * GET /api/host/calendar/export/[listingId]?token=<hmac>
@@ -14,10 +14,6 @@ import { buildHostCalendarExportUrl, makeCalendarExportToken } from '@/lib/host-
  */
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
-
-export function buildExportUrl(listingId: string, baseUrl: string): string {
-  return buildHostCalendarExportUrl(listingId, baseUrl)
-}
 
 export async function GET(
   req: NextRequest,
