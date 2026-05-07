@@ -23,3 +23,4 @@ next-env.d.ts
 
 # Supabase CLI link metadata (local only)
 supabase/.temp/
+.vercel
