@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
-import { createHmac } from 'crypto'
+import { buildHostCalendarExportUrl, makeCalendarExportToken } from '@/lib/host-calendar-export-url'
 
 /**
  * GET /api/host/calendar/export/[listingId]?token=<hmac>
@@ -15,15 +15,8 @@ import { createHmac } from 'crypto'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-function makeToken(listingId: string): string {
-  const secret = process.env.CALENDAR_EXPORT_SECRET
-  if (!secret) throw new Error('CALENDAR_EXPORT_SECRET not set')
-  return createHmac('sha256', secret).update(listingId).digest('hex')
-}
-
 export function buildExportUrl(listingId: string, baseUrl: string): string {
-  const token = makeToken(listingId)
-  return `${baseUrl}/api/host/calendar/export/${listingId}?token=${token}`
+  return buildHostCalendarExportUrl(listingId, baseUrl)
 }
 
 export async function GET(
@@ -36,7 +29,7 @@ export async function GET(
   // Verify HMAC token
   let expectedToken: string
   try {
-    expectedToken = makeToken(listingId)
+    expectedToken = makeCalendarExportToken(listingId)
   } catch {
     return new NextResponse('CALENDAR_EXPORT_SECRET not configured', { status: 503 })
   }

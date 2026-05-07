@@ -9,7 +9,11 @@ import UserAuthNav from '@/components/layout/UserAuthNav'
 import { createClient } from '@/lib/supabase/client'
 import { isSupabaseConfigured } from '@/lib/env'
 
-const guestLinks = [{ label: 'Browse', href: '/fleet' }]
+const travelerLinks = [
+  { label: 'Home', href: '/' },
+  { label: 'Browse', href: '/fleet' },
+  { label: 'My Trips', href: '/trips' },
+]
 
 const hostLinks = [
   { label: 'Home', href: '/host' },
@@ -112,10 +116,10 @@ export default function Navbar() {
     .filter(Boolean)
     .join(' ')
 
-  /** Host "Home" is exactly `/host` — must not use prefix match or every `/host/...` page would highlight Home. */
+  /** `/` and `/host` only highlight on exact match — prefix match would light up every route. */
   const isActiveLink = (href: string) => {
     if (pathname === href) return true
-    if (href === '/host') return false
+    if (href === '/' || href === '/host') return false
     return pathname.startsWith(`${href}/`)
   }
 
@@ -131,15 +135,16 @@ export default function Navbar() {
       active ? 'text-gold-300' : 'text-cream-100/80 hover:text-gold-300',
     ].join(' ')
 
-  const mobileNavLinks = isHost ? hostLinks : showBrowse ? guestLinks : []
+  const mobileNavLinks = isHost ? hostLinks : showBrowse ? travelerLinks : []
 
   return (
     <>
       <nav className={navbarClasses}>
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <div className="flex items-center justify-between h-20">
+          {/* 1fr | auto | 1fr — nav track is truly centered in the bar (not offset by uneven logo vs. profile width) */}
+          <div className="flex h-20 items-center justify-between lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-3 group">
+            <Link href="/" className="flex items-center gap-3 group shrink-0 lg:justify-self-start">
               <div className="w-9 h-9 bg-gold-400 flex items-center justify-center rounded-sm group-hover:bg-gold-300 transition-colors duration-300">
                 <Tent className="w-5 h-5 text-forest-950" strokeWidth={1.5} />
               </div>
@@ -153,62 +158,45 @@ export default function Navbar() {
               </div>
             </Link>
 
-            {/* Desktop Navigation — host tabs centered; guests use Browse next to profile */}
+            {/* Desktop Navigation — host and traveler tabs centered (same layout as host) */}
             <LayoutGroup id="desktop-nav-tabs">
-              <div className="hidden lg:flex flex-1 justify-center items-center gap-10">
-                {isHost &&
-                  hostLinks.map((link) => {
-                    const active = isActiveLink(link.href)
-                    return (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        className={desktopLinkClass(active)}
-                      >
-                        {link.label}
-                        {active && (
-                          <motion.span
-                            layoutId="desktop-nav-underline"
-                            className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-gold-400"
-                            transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                          />
-                        )}
-                      </Link>
-                    )
-                  })}
+              <div className="hidden lg:flex items-center justify-center gap-10 lg:justify-self-center min-w-0">
+                {(isHost ? hostLinks : showBrowse ? travelerLinks : []).map((link) => {
+                  const active = isActiveLink(link.href)
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className={desktopLinkClass(active)}
+                    >
+                      {link.label}
+                      {active && (
+                        <motion.span
+                          layoutId="desktop-nav-underline"
+                          className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-gold-400"
+                          transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                        />
+                      )}
+                    </Link>
+                  )
+                })}
               </div>
             </LayoutGroup>
 
-            {/* Desktop Browse (guests) + auth */}
-            <LayoutGroup id="desktop-nav-auth">
-              <div className="hidden lg:flex items-center gap-4 shrink-0">
-                {showBrowse && (
-                  <Link
-                    href="/fleet"
-                    className={desktopLinkClass(isActiveLink('/fleet'))}
-                  >
-                    Browse
-                    {isActiveLink('/fleet') && (
-                      <motion.span
-                        layoutId="desktop-nav-underline-auth"
-                        className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-gold-400"
-                        transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                      />
-                    )}
-                  </Link>
-                )}
+            <div className="flex items-center justify-end shrink-0 lg:justify-self-end gap-2">
+              <div className="hidden lg:block">
                 <UserAuthNav />
               </div>
-            </LayoutGroup>
-
-            {/* Mobile Hamburger */}
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="lg:hidden p-2 text-cream-100 hover:text-gold-300 transition-colors duration-200"
-              aria-label="Toggle menu"
-            >
-              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+              {/* Mobile Hamburger */}
+              <button
+                type="button"
+                onClick={() => setMobileOpen(!mobileOpen)}
+                className="lg:hidden p-2 text-cream-100 hover:text-gold-300 transition-colors duration-200"
+                aria-label="Toggle menu"
+              >
+                {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
           </div>
         </div>
 

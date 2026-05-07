@@ -98,7 +98,7 @@ export async function POST(request: Request) {
     .from('reservations')
     .select('start_date, end_date, status')
     .eq('listing_id', listingId)
-    .in('status', ['confirmed', 'pending_payment'])
+    .in('status', ['confirmed', 'pending_payment', 'pending_host'])
 
   for (const r of reservations || []) {
     if (

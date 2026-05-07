@@ -327,3 +327,15 @@ input::placeholder,
 textarea::placeholder {
   color: #9ca3af;
 }
+
+/* Remove native calendar glyph on date inputs (custom icons / labels already indicate the field). */
+input[type='date']::-webkit-calendar-picker-indicator {
+  -webkit-appearance: none;
+  appearance: none;
+  opacity: 0;
+  display: none;
+}
+
+input[type='date']::-moz-calendar-picker-indicator {
+  display: none;
+}

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { MapPin, Users, Ruler, Star, CheckCircle, FileText } from 'lucide-react'
 import type { BlockRange } from '@/lib/availability'
 import type { Van } from '@/types'
-import { getCategoryLabel } from '@/lib/data'
+import { getCategoryLabel, formatVanLengthFt } from '@/lib/data'
 import ListingReservePanel from './ListingReservePanel'
 import ListingInlineChat from './ListingInlineChat'
 
@@ -79,7 +79,7 @@ export default function ListingDetailBody({ van, blocks, pets, smoking }: Props)
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Ruler className="w-4 h-4 flex-shrink-0" />
-              {van.length}
+              {formatVanLengthFt(van.length) ?? van.length}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <MapPin className="w-4 h-4 flex-shrink-0" />

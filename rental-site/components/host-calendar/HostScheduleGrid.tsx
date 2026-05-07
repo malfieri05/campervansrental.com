@@ -16,14 +16,17 @@ import {
   min,
   differenceInDays,
 } from 'date-fns'
-import type { CalendarReservation, BlockRow } from '@/app/host/calendar/page'
+import type { CalendarReservation, BlockRow, ExternalFeed } from '@/app/host/calendar/page'
 import type { TripStatusFilter } from './HostCalendarSidebar'
+import { getFeedColorTheme } from '@/lib/calendar-feed-colors'
 
 const MONTHS_SHOWN = 6
 
 type Props = {
   blocks: BlockRow[]
   reservations: CalendarReservation[]
+  /** Linked iCal feeds — one distinct color + label per feed */
+  feeds: ExternalFeed[]
   filters: TripStatusFilter
   pricePerNight: number | null
   onReservationClick: (id: string) => void
@@ -38,7 +41,7 @@ function categorize(r: CalendarReservation): StatusCategory {
   today.setHours(0, 0, 0, 0)
   const start = parseISO(r.start_date)
   const end = parseISO(r.end_date)
-  if (r.status === 'pending_payment' || r.status === 'pending') return 'pending'
+  if (r.status === 'pending_payment' || r.status === 'pending_host' || r.status === 'pending') return 'pending'
   if (r.status === 'confirmed') {
     if (isBefore(end, today)) return 'completed'
     if (!isAfter(start, today) && isBefore(today, end)) return 'currently_hosting'
@@ -92,8 +95,75 @@ function reservationSpanInWeek(
   }
 }
 
+/** Half-open interval [rangeStart, rangeEndExclusive) in date space — matches ICS / availability_blocks from sync */
+function externalIntervalSpanInWeek(
+  weekDays: Date[],
+  rangeStart: Date,
+  rangeEndExclusive: Date
+): { colStart: number; colEnd: number } | null {
+  const weekStart = weekDays[0]
+  const weekAfterLast = addDays(weekDays[6], 1)
+  const clampedFirst = max([rangeStart, weekStart])
+  const clampedEndExclusive = min([rangeEndExclusive, weekAfterLast])
+  if (!isBefore(clampedFirst, clampedEndExclusive)) return null
+  return {
+    colStart: differenceInDays(clampedFirst, weekStart),
+    colEnd: differenceInDays(clampedEndExclusive, weekStart),
+  }
+}
+
 function formatNightlyRate(cents: number) {
   return `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+/** Half-open column intervals [colStart, colEnd) overlap if they share any day column in the week row */
+function columnIntervalsOverlap(a: { colStart: number; colEnd: number }, b: { colStart: number; colEnd: number }) {
+  return a.colStart < b.colEnd && b.colStart < a.colEnd
+}
+
+const BAR_TOP_OFFSET_PX = 34
+const BAR_HEIGHT_PX = 26
+const BAR_GAP_PX = 4
+/** Always reserve vertical room for two stacked bars (even when a day has only one) */
+const MIN_STACK_DEPTH = 2
+/** Space below the bar stack for nightly rate + cell padding */
+const FOOTER_BELOW_BARS_PX = 36
+
+/**
+ * Greedy lane assignment: overlapping horizontal bars get distinct vertical lanes (0, 1, 2, …).
+ * Sort by start column, then longer spans first, to keep lane count low.
+ */
+function assignStackLanes<T extends { colStart: number; colEnd: number }>(items: T[]): number[] {
+  const n = items.length
+  const lanes = new Array<number>(n).fill(0)
+  if (n === 0) return lanes
+
+  const order = items.map((_, i) => i).sort((i, j) => {
+    const a = items[i]
+    const b = items[j]
+    if (a.colStart !== b.colStart) return a.colStart - b.colStart
+    return (b.colEnd - b.colStart) - (a.colEnd - a.colStart)
+  })
+
+  type Placed = { lane: number; colStart: number; colEnd: number }
+  const placed: Placed[] = []
+
+  for (const i of order) {
+    const bar = items[i]
+    let lane = 0
+    while (placed.some((p) => p.lane === lane && columnIntervalsOverlap(p, bar))) {
+      lane++
+    }
+    lanes[i] = lane
+    placed.push({ lane, colStart: bar.colStart, colEnd: bar.colEnd })
+  }
+
+  return lanes
+}
+
+function rowMinHeightPx(maxLaneIndex: number) {
+  const depth = Math.max(MIN_STACK_DEPTH, maxLaneIndex + 1)
+  return BAR_TOP_OFFSET_PX + depth * BAR_HEIGHT_PX + (depth - 1) * BAR_GAP_PX + FOOTER_BELOW_BARS_PX
 }
 
 function guestLabel(first: string | null, last: string | null) {
@@ -106,6 +176,7 @@ function guestLabel(first: string | null, last: string | null) {
 export default function HostScheduleGrid({
   blocks,
   reservations,
+  feeds,
   filters,
   pricePerNight,
   onReservationClick,
@@ -119,17 +190,34 @@ export default function HostScheduleGrid({
     Array.from({ length: MONTHS_SHOWN }, (_, i) => startOfMonth(addMonths(today, i)))
   , [today])
 
+  /** Host manual blocks only — external_sync is shown as booking bars (same as platform reservations) */
   const blockedDates = useMemo(() => {
     const set = new Set<string>()
     for (const b of blocks) {
-      if (b.block_type === 'host_blocked' || b.block_type === 'external_sync') {
+      if (b.block_type === 'host_blocked') {
         let cur = parseISO(b.start_date)
         const end = parseISO(b.end_date)
-        while (isBefore(cur, end)) { set.add(format(cur, 'yyyy-MM-dd')); cur = addDays(cur, 1) }
+        while (isBefore(cur, end)) {
+          set.add(format(cur, 'yyyy-MM-dd'))
+          cur = addDays(cur, 1)
+        }
       }
     }
     return set
   }, [blocks])
+
+  const feedBarStyle = useMemo(() => {
+    const m = new Map<string, { label: string; barClass: string }>()
+    feeds.forEach((f, i) => {
+      const name = f.display_name?.trim() || 'External'
+      const theme = getFeedColorTheme(i)
+      m.set(f.id, {
+        label: `Booked - ${name}`,
+        barClass: theme.barClass,
+      })
+    })
+    return m
+  }, [feeds])
 
   const visibleReservations = useMemo(() =>
     reservations
@@ -176,8 +264,38 @@ export default function HostScheduleGrid({
                 return [{ ...r, ...span, isStart }]
               })
 
+              const externalBars = blocks.flatMap((b, idx) => {
+                if (b.block_type !== 'external_sync') return []
+                const calId = b.external_calendar_id ?? null
+                const rangeStart = parseISO(b.start_date)
+                const rangeEndExclusive = parseISO(b.end_date)
+                const span = externalIntervalSpanInWeek(weekDays, rangeStart, rangeEndExclusive)
+                if (!span) return []
+                const meta = calId ? feedBarStyle.get(calId) : undefined
+                const label = meta?.label ?? 'Booked - External'
+                const barClass = meta?.barClass ?? getFeedColorTheme(0).barClass
+                const isStart =
+                  format(rangeStart, 'yyyy-MM-dd') === format(max([rangeStart, weekDays[0]]), 'yyyy-MM-dd') &&
+                  rangeStart >= weekDays[0]
+                return [{ key: `ext-${b.start_date}-${b.end_date}-${calId ?? 'na'}-${idx}`, label, barClass, ...span, isStart }]
+              })
+
+              const stackItems = [
+                ...bars.map((bar) => ({ colStart: bar.colStart, colEnd: bar.colEnd })),
+                ...externalBars.map((bar) => ({ colStart: bar.colStart, colEnd: bar.colEnd })),
+              ]
+              const stackLanes = assignStackLanes(stackItems)
+              const resLanes = stackLanes.slice(0, bars.length)
+              const extLanes = stackLanes.slice(bars.length)
+              const maxLaneThisWeek = stackLanes.length ? Math.max(...stackLanes) : 0
+              const weekRowMinH = rowMinHeightPx(maxLaneThisWeek)
+
               return (
-                <div key={wi} className="relative z-0 grid grid-cols-7 border-b border-neutral-100 last:border-b-0">
+                <div
+                  key={wi}
+                  className="relative z-0 grid grid-cols-7 border-b border-neutral-100 last:border-b-0"
+                  style={{ minHeight: weekRowMinH }}
+                >
                   {/* Date cells */}
                   {weekDays.map((day, di) => {
                     const isCurrentMonth = isSameMonth(day, monthStart)
@@ -196,8 +314,9 @@ export default function HostScheduleGrid({
                         key={di}
                         type="button"
                         onClick={() => onDayClick(dateStr)}
+                        style={{ minHeight: weekRowMinH }}
                         className={[
-                          'relative min-h-[96px] border-r border-neutral-100 px-2 pt-2 pb-1.5 text-left outline-none ring-inset transition-colors duration-150 last:border-r-0 focus-visible:ring-2 focus-visible:ring-gold-400/70 flex flex-col',
+                          'relative flex flex-col border-r border-neutral-100 px-2 pt-2 pb-1.5 text-left outline-none ring-inset transition-colors duration-150 last:border-r-0 focus-visible:ring-2 focus-visible:ring-gold-400/70',
                           hoverTint,
                           !isCurrentMonth ? 'cursor-pointer bg-neutral-50' : isBlocked ? 'cursor-pointer bg-red-50/40' : 'cursor-pointer bg-white',
                         ].join(' ')}
@@ -206,14 +325,17 @@ export default function HostScheduleGrid({
                         {/* Day number */}
                         <span
                           className={[
-                            'pointer-events-none text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full shrink-0',
+                            'pointer-events-none font-semibold flex items-center justify-center rounded-full shrink-0',
                             isToday
-                              ? 'bg-gold-400 text-white ring-1 ring-gold-600/40'
-                              : !isCurrentMonth
-                                ? 'text-neutral-300'
-                                : isBlocked
-                                  ? 'text-red-400'
-                                  : 'text-neutral-700',
+                              ? 'text-xs w-6 h-6 bg-gold-400 text-white ring-1 ring-gold-600/35'
+                              : [
+                                  'text-sm w-7 h-7',
+                                  !isCurrentMonth
+                                    ? 'text-neutral-300'
+                                    : isBlocked
+                                      ? 'text-red-400'
+                                      : 'text-neutral-700',
+                                ].join(' '),
                           ].join(' ')}
                         >
                           {format(day, 'd')}
@@ -234,6 +356,8 @@ export default function HostScheduleGrid({
 
                   {/* Reservation bars — absolute overlay inside the week row */}
                   {bars.map((bar, bi) => {
+                    const lane = resLanes[bi] ?? 0
+                    const topPx = BAR_TOP_OFFSET_PX + lane * (BAR_HEIGHT_PX + BAR_GAP_PX)
                     const label = bar.guest_first_name
                       ? `${guestLabel(bar.guest_first_name, bar.guest_last_name)}  ${STATUS_LABELS[bar.category as StatusCategory]}`
                       : STATUS_LABELS[bar.category as StatusCategory]
@@ -244,15 +368,14 @@ export default function HostScheduleGrid({
                         type="button"
                         onClick={() => onReservationClick(bar.id)}
                         className={[
-                          'absolute z-10 cursor-pointer text-left focus:outline-none',
+                          'absolute z-20 cursor-pointer text-left focus:outline-none',
                           BAR_STYLES[bar.category as StatusCategory],
                           'rounded-r-sm hover:brightness-95 transition-all',
                           bar.isStart ? 'rounded-l-sm' : '',
                         ].join(' ')}
                         style={{
-                          // Position within the cell: below the day number (~32px)
-                          top: '34px',
-                          height: '26px',
+                          top: topPx,
+                          height: BAR_HEIGHT_PX,
                           left: `calc(${(bar.colStart / 7) * 100}% + 1px)`,
                           width: `calc(${((bar.colEnd - bar.colStart) / 7) * 100}% - 2px)`,
                         }}
@@ -261,6 +384,33 @@ export default function HostScheduleGrid({
                           {label}
                         </span>
                       </button>
+                    )
+                  })}
+
+                  {/* External calendar (iCal) bookings — same bar treatment, color per linked feed */}
+                  {externalBars.map((bar, ei) => {
+                    const lane = extLanes[ei] ?? 0
+                    const topPx = BAR_TOP_OFFSET_PX + lane * (BAR_HEIGHT_PX + BAR_GAP_PX)
+                    return (
+                    <div
+                      key={bar.key}
+                      role="status"
+                      className={[
+                        'pointer-events-none absolute z-[15] text-left rounded-r-sm',
+                        bar.barClass,
+                        bar.isStart ? 'rounded-l-sm' : '',
+                      ].join(' ')}
+                      style={{
+                        top: topPx,
+                        height: BAR_HEIGHT_PX,
+                        left: `calc(${(bar.colStart / 7) * 100}% + 1px)`,
+                        width: `calc(${((bar.colEnd - bar.colStart) / 7) * 100}% - 2px)`,
+                      }}
+                    >
+                      <span className="flex items-center h-full px-2 text-[11px] font-semibold leading-none truncate">
+                        {bar.label}
+                      </span>
+                    </div>
                     )
                   })}
                 </div>

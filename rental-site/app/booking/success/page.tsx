@@ -38,6 +38,7 @@ export default async function BookingSuccessPage({
   let paid = false
   let tripSummary: TripSummary | null = null
   let reservationId: string | null = null
+  let reservationStatus: string | null = null
   let vehicleYear  = ''
   let vehicleMake  = ''
   let vehicleModel = ''
@@ -62,6 +63,7 @@ export default async function BookingSuccessPage({
             guests,
             total_cents,
             deposit_cents,
+            status,
             listings (
               title,
               slug,
@@ -90,6 +92,7 @@ export default async function BookingSuccessPage({
         const listing = Array.isArray(rawListing) ? rawListing[0] : rawListing
 
         if (resv && listing) {
+          reservationStatus = (resv.status as string | null) ?? null
           const rawHost = listing.profiles
           const host = Array.isArray(rawHost) ? rawHost[0] : rawHost
           if (host?.display_name) hostName = host.display_name
@@ -137,6 +140,7 @@ export default async function BookingSuccessPage({
       tripSummary={tripSummary}
       stripeSessionId={sessionId}
       reservationId={reservationId}
+      reservationStatus={reservationStatus}
       hostName={hostName}
       vehicleYear={vehicleYear}
       vehicleMake={vehicleMake}

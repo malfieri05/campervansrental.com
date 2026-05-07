@@ -15,6 +15,11 @@ import { ChevronLeft, ChevronRight, Share2, X } from 'lucide-react'
 const PLACEHOLDER =
   'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?w=800'
 
+/** 15% shorter than legacy 16/7 at the same width (more listing detail above the fold). */
+const LISTING_HERO_ASPECT_MAIN = 16 / (7 * 0.85)
+/** 2-column hero tiles: 15% shorter than 4/3 at the same width. */
+const LISTING_HERO_ASPECT_TILE_2UP = 4 / (3 * 0.85)
+
 interface Props {
   images: string[]
   alt: string
@@ -208,7 +213,8 @@ function HeroGrid({
       <button
         type="button"
         onClick={() => onOpen(0)}
-        className="group relative w-full aspect-[16/7] overflow-hidden rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400"
+        className="group relative w-full overflow-hidden rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400"
+        style={{ aspectRatio: LISTING_HERO_ASPECT_MAIN }}
       >
         <Image src={slots[0]!} alt={alt} fill className={heroImg} sizes="88rem" priority />
       </button>
@@ -224,7 +230,8 @@ function HeroGrid({
             key={i}
             type="button"
             onClick={() => onOpen(i)}
-            className="group relative aspect-[4/3] overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400"
+            className="group relative overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400"
+            style={{ aspectRatio: LISTING_HERO_ASPECT_TILE_2UP }}
           >
             <Image src={slots[i]!} alt={`${alt} ${i + 1}`} fill className={heroImg} sizes="50vw" priority={i === 0} />
           </button>
@@ -236,7 +243,10 @@ function HeroGrid({
   // 3 images: main on left, two stacked on right
   if (total === 3) {
     return (
-      <div className="grid grid-cols-[1fr_1fr] grid-rows-[1fr_1fr] gap-1 rounded-2xl overflow-hidden" style={{ aspectRatio: '16/7' }}>
+      <div
+        className="grid grid-cols-[1fr_1fr] grid-rows-[1fr_1fr] gap-1 rounded-2xl overflow-hidden"
+        style={{ aspectRatio: LISTING_HERO_ASPECT_MAIN }}
+      >
         <button
           type="button"
           onClick={() => onOpen(0)}
@@ -261,7 +271,10 @@ function HeroGrid({
   // 4 images: main left + 3 right (top + 2 bottom)
   if (total === 4) {
     return (
-      <div className="grid grid-cols-[1fr_1fr] grid-rows-[1fr_1fr] gap-1 rounded-2xl overflow-hidden" style={{ aspectRatio: '16/7' }}>
+      <div
+        className="grid grid-cols-[1fr_1fr] grid-rows-[1fr_1fr] gap-1 rounded-2xl overflow-hidden"
+        style={{ aspectRatio: LISTING_HERO_ASPECT_MAIN }}
+      >
         <button
           type="button"
           onClick={() => onOpen(0)}
@@ -287,7 +300,7 @@ function HeroGrid({
   return (
     <div
       className="grid grid-rows-[1fr_1fr] gap-1 rounded-2xl overflow-hidden"
-      style={{ gridTemplateColumns: '1fr 1fr', aspectRatio: '16/7' }}
+      style={{ gridTemplateColumns: '1fr 1fr', aspectRatio: LISTING_HERO_ASPECT_MAIN }}
     >
       {/* Main — spans 2 rows */}
       <button

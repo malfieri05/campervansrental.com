@@ -8,32 +8,30 @@ type Message = {
   content: string
 }
 
+const WELCOME_MESSAGE =
+  "Hi! I'm the assistant for this listing. Ask me anything about the van, pricing, pickup process, or what to expect on your trip."
+
 interface Props {
   slug: string
 }
 
 export default function ListingInlineChat({ slug }: Props) {
-  const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([])
+  const [open, setOpen] = useState(true)
+  const [messages, setMessages] = useState<Message[]>([
+    { role: 'assistant', content: WELCOME_MESSAGE },
+  ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const messagesScrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
+  // Keep newest messages visible inside the chat panel only — never scrollIntoView
+  // (that would scroll the whole listing page to the chat).
   useEffect(() => {
-    if (open && messages.length === 0) {
-      setMessages([
-        {
-          role: 'assistant',
-          content: "Hi! I'm the assistant for this listing. Ask me anything about the van, pricing, pickup process, or what to expect on your trip.",
-        },
-      ])
-    }
-  }, [open, messages.length])
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = messagesScrollRef.current
+    if (!el) return
+    el.scrollTop = el.scrollHeight
   }, [messages, loading])
 
   const submit = async () => {
@@ -119,7 +117,7 @@ export default function ListingInlineChat({ slug }: Props) {
       {open && (
         <div className="border-t border-neutral-100">
           {/* Messages */}
-          <div className="max-h-80 overflow-y-auto px-5 py-4 space-y-3">
+          <div ref={messagesScrollRef} className="max-h-80 overflow-y-auto px-5 py-4 space-y-3">
             {messages.map((msg, i) => (
               <div
                 key={i}
@@ -149,7 +147,6 @@ export default function ListingInlineChat({ slug }: Props) {
             {error && (
               <p className="text-xs text-red-600 text-center">{error}</p>
             )}
-            <div ref={bottomRef} />
           </div>
 
           {/* Input */}
@@ -178,7 +175,7 @@ export default function ListingInlineChat({ slug }: Props) {
             </button>
           </div>
           <p className="px-5 pb-3 text-[10px] text-neutral-400 leading-tight">
-            AI responses may be imperfect. Contact the host directly for critical questions.
+            AI responses may be imperfect.
           </p>
         </div>
       )}

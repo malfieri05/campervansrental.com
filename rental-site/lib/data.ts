@@ -200,6 +200,21 @@ export const getCategoryLabel = (category: Van['category']): string => {
   return labels[category]
 }
 
+/** Ensures a numeric length always displays with a feet suffix (e.g. "22" → "22 ft", "22ft" → "22 ft"). */
+export function formatVanLengthFt(length: string | null | undefined): string | null {
+  const raw = length?.trim()
+  if (!raw) return null
+  const core = raw
+    .replace(/\s*ft\.?\s*$/i, '')
+    .replace(/\s*feet\s*$/i, '')
+    .replace(/\s*'\s*$/, '')
+    .trim()
+  if (/^\d+(\.\d+)?$/.test(core)) {
+    return `${core} ft`
+  }
+  return raw
+}
+
 export const getVanById = (id: string): Van | undefined => {
   return vans.find((van) => van.id === id)
 }

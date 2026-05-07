@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { isSupabaseConfigured } from '@/lib/env'
 import Button from '@/components/ui/Button'
+import { ProfileInitialsContent } from '@/components/ui/ProfileInitialsContent'
 
 type AuthState =
   | { status: 'loading' }
@@ -180,9 +181,12 @@ export default function UserAuthNav({ mobile = false }: { mobile?: boolean }) {
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="h-10 w-10 rounded-full border border-cream-300/50 bg-forest-900 text-cream-100 font-display text-xs font-bold uppercase tracking-widest transition hover:border-gold-300/70 hover:text-gold-200"
+        className="group grid h-10 w-10 shrink-0 grid-cols-1 grid-rows-1 overflow-hidden rounded-full border border-cream-300/50 bg-forest-900 p-0 transition hover:border-gold-300/70"
       >
-        {authState.initials}
+        <ProfileInitialsContent
+          initials={authState.initials}
+          textClassName="font-display text-cream-100 group-hover:text-gold-200"
+        />
       </button>
 
       {open && (

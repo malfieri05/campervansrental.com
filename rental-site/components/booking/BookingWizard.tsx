@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Check, ChevronRight, MapPin, Calendar, Users, Star, ArrowLeft } from 'lucide-react'
 import { Van } from '@/types'
-import { getCategoryLabel } from '@/lib/data'
+import { getCategoryLabel, formatVanLengthFt } from '@/lib/data'
 import Button from '@/components/ui/Button'
 
 const steps = [
@@ -648,7 +648,9 @@ function VanSelectionCard({
             <span className="font-display text-xs font-bold text-charcoal">{van.rating}</span>
           </div>
         </div>
-        <p className="font-sans text-xs text-charcoal/50 mb-3">Sleeps {van.sleeps} &bull; {van.length}</p>
+        <p className="font-sans text-xs text-charcoal/50 mb-3">
+          Sleeps {van.sleeps} &bull; {formatVanLengthFt(van.length) ?? van.length}
+        </p>
         <div className="flex items-center justify-between">
           <div>
             <span className="font-serif text-xl font-semibold text-gold-500">

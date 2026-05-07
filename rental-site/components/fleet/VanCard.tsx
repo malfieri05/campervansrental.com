@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useCallback, useState } from 'react'
 import { Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Van } from '@/types'
-import { getCategoryLabel } from '@/lib/data'
+import { getCategoryLabel, formatVanLengthFt } from '@/lib/data'
 
 interface VanCardProps {
   van: Van
@@ -39,7 +39,7 @@ export default function VanCard({ van }: VanCardProps) {
   const specs = [
     getCategoryLabel(van.category),
     van.sleeps ? `Sleeps ${van.sleeps}` : null,
-    van.length || null,
+    formatVanLengthFt(van.length),
   ]
     .filter(Boolean)
     .join(' · ')
