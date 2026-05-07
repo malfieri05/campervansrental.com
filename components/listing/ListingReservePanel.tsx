@@ -3,7 +3,7 @@
 import { createPortal } from 'react-dom'
 import type { CSSProperties } from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { format, differenceInCalendarDays, parseISO, addDays } from 'date-fns'
+import { format, differenceInCalendarDays, parseISO } from 'date-fns'
 import { CalendarDays, ChevronDown, ChevronRight, Flame, MapPin, Package, X } from 'lucide-react'
 import type { BlockRange } from '@/lib/availability'
 import { siteUrl } from '@/lib/env'
@@ -45,10 +45,6 @@ function fmt(iso: string) {
   return format(parseISO(iso), 'MMM d, yyyy')
 }
 
-function dayKey(d: Date) {
-  return format(d, 'yyyy-MM-dd')
-}
-
 /** Deterministic placeholder view count so it looks real even offline. */
 function placeholderViews(vanId: string) {
   let hash = 0
@@ -70,6 +66,7 @@ export default function ListingReservePanel({
   const [mounted, setMounted] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
+  const prevCheckOutRef = useRef<string | null>(null)
   const [panelStyle, setPanelStyle] = useState<CSSProperties>({})
 
   const minNights = van.minNights ?? 1
@@ -134,17 +131,17 @@ export default function ListingReservePanel({
     }
   }, [calendarOpen])
 
-  // Enforce min nights: if checkout is before checkIn+minNights, clear it
+  useEffect(() => {
+    const before = prevCheckOutRef.current
+    prevCheckOutRef.current = checkOut
+    if (calendarOpen && checkIn && checkOut && before === null) {
+      const id = window.setTimeout(() => setCalendarOpen(false), 200)
+      return () => clearTimeout(id)
+    }
+  }, [checkIn, checkOut, calendarOpen])
+
   const handleDateClick = (key: string) => {
-    if (checkIn && !checkOut) {
-      const minCheckout = dayKey(addDays(parseISO(checkIn), minNights))
-      if (key < minCheckout) return
-    }
     onDateClick(key)
-    // Auto-close popover when both dates selected
-    if (checkIn && !checkOut) {
-      setTimeout(() => setCalendarOpen(false), 200)
-    }
   }
 
   const reviewHref = hasDates

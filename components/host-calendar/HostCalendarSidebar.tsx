@@ -73,7 +73,7 @@ export default function HostCalendarSidebar({
 
   return (
     <>
-      <aside className="flex w-full shrink-0 flex-col gap-0 border-b border-neutral-200 bg-white lg:h-full lg:min-h-0 lg:w-[280px] lg:shrink-0 lg:border-b-0 lg:border-r lg:overflow-y-auto">
+      <aside className="flex w-full shrink-0 flex-col gap-0 border-b border-neutral-200 bg-white max-h-[42vh] overflow-y-auto lg:max-h-none lg:h-full lg:min-h-0 lg:w-[280px] lg:shrink-0 lg:border-b-0 lg:border-r lg:overflow-y-auto">
         {/* Header */}
         <div className="px-5 pt-6 pb-4 border-b border-neutral-100">
           <h1 className="text-xl font-bold text-neutral-900 tracking-tight">Calendar</h1>

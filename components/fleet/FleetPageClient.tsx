@@ -27,7 +27,7 @@ export default function FleetPageClient({ listings }: { listings: Van[] }) {
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-6 lg:px-10 py-16">
+      <section className="max-w-7xl mx-auto px-6 lg:px-10 py-10 sm:py-16">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 font-sans text-sm font-medium text-charcoal/70 hover:text-charcoal transition-colors mb-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest-600 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-100 rounded"

@@ -46,6 +46,8 @@ interface Props {
   vehicleModel?: string
   vin?: string
   licensePlate?: string
+  /** Deep-link from Trips “Not yet completed” — opens rental agreement workspace immediately */
+  initialWorkspaceOpen?: boolean
 }
 
 type Step = 'dl' | 'insurance' | 'agreement'
@@ -443,8 +445,13 @@ export default function BookingSuccessClient({
   vehicleModel = '',
   vin,
   licensePlate,
+  initialWorkspaceOpen = false,
 }: Props) {
-  const [workspaceOpen, setWorkspaceOpen] = useState(false)
+  const awaitingHostApproval = reservationStatus === 'pending_host'
+
+  const [workspaceOpen, setWorkspaceOpen] = useState(
+    () => Boolean(initialWorkspaceOpen && paid && tripSummary && !awaitingHostApproval)
+  )
   const [currentStep, setCurrentStep]     = useState<Step>('dl')
   const [completedSteps, setCompletedSteps] = useState<Set<Step>>(new Set())
   const [allDone, setAllDone]             = useState(false)
@@ -619,8 +626,6 @@ export default function BookingSuccessClient({
   const dlValid      = Boolean(dlName.trim() && dlNumber.trim() && dlState.trim())
   const insValid     = Boolean(insCarrier.trim() && insPolicy.trim() && insLiab && insComp)
   const sigValid     = Boolean((sigDataUrl || sigTyped.trim()) && agreementRead)
-
-  const awaitingHostApproval = reservationStatus === 'pending_host'
 
   if (!paid || !tripSummary) {
     return (

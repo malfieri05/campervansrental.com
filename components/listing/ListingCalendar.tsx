@@ -15,6 +15,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 import type { BlockRange } from '@/lib/availability'
+import { todayDateKey } from '@/lib/listing-date-selection'
 
 type Props = {
   blocks: BlockRange[]
@@ -75,6 +76,8 @@ type MonthPaneProps = {
   /** Renter selection */
   checkIn?: string | null
   checkOut?: string | null
+  /** yyyy-MM-dd local today — disables past nights for renters */
+  todayKey: string
   leadingNav?: ReactNode
   trailingNav?: ReactNode
 }
@@ -90,9 +93,11 @@ function MonthPane({
   checkOut,
   leadingNav,
   trailingNav,
+  todayKey,
 }: MonthPaneProps) {
   const placeholder = <span className="inline-flex w-9 h-9 shrink-0" aria-hidden />
   const renterMode = checkIn !== undefined
+  const pickingCheckout = renterMode && Boolean(checkIn && !checkOut)
 
   return (
     <div className="rounded-xl border border-cream-300/60 bg-cream-50/90 p-3 sm:p-4 shadow-luxury-sm">
@@ -127,15 +132,25 @@ function MonthPane({
           const selected = !renterMode && selStart === key
 
           const isDisabled = readOnly && !renterMode
+          const isPastDay = renterMode && key < todayKey
           const isBlockedInRenterMode = renterMode && Boolean(blocked)
+          /** Checkout can land on a calendar day that starts a block; range overlap is validated in `resolveListingDateClick`. */
+          const renterDayDisabled =
+            renterMode && (isPastDay || (!pickingCheckout && isBlockedInRenterMode))
 
           return (
             <button
               key={`${format(monthAnchor, 'yyyy-MM')}-${key}`}
               type="button"
-              disabled={isDisabled}
+              disabled={isDisabled || renterDayDisabled}
               onClick={() => onDayClick(d)}
-              title={isBlockedInRenterMode ? 'Unavailable' : undefined}
+              title={
+                isPastDay
+                  ? 'Cannot select past dates'
+                  : isBlockedInRenterMode
+                    ? 'Unavailable'
+                    : undefined
+              }
               className={[
                 'min-h-[2.35rem] sm:min-h-[2.5rem] rounded-lg text-xs font-sans flex items-center justify-center transition-all duration-150 relative',
                 inMonth ? 'text-charcoal' : 'text-charcoal/25',
@@ -160,11 +175,11 @@ function MonthPane({
                   : '',
                 // Host selection
                 selected ? 'ring-2 ring-gold-500' : '',
-                // Blocked in renter mode: dim but still clickable to restart selection
                 isBlockedInRenterMode && !isCheckIn && !isCheckOut
                   ? 'opacity-40 cursor-not-allowed'
                   : '',
-                isDisabled ? 'cursor-default' : 'cursor-pointer',
+                isPastDay && !isCheckIn && !isCheckOut ? 'opacity-35 cursor-not-allowed' : '',
+                isDisabled || renterDayDisabled ? 'cursor-default' : 'cursor-pointer',
               ].join(' ')}
             >
               {format(d, 'd')}
@@ -191,6 +206,7 @@ export default function ListingCalendar({
   const [selStart, setSelStart] = useState<string | null>(null)
 
   const renterMode = checkIn !== undefined
+  const todayKey = todayDateKey()
 
   const secondMonth = useMemo(() => addMonths(cursor, 1), [cursor])
   const gridDaysLeft = useMemo(() => monthGridDays(cursor), [cursor])
@@ -216,9 +232,12 @@ export default function ListingCalendar({
 
   const onDayClick = (d: Date) => {
     const key = dayKey(d)
+    const pickingCheckout = Boolean(checkIn && !checkOut)
 
     // Renter mode: delegate all state to parent
     if (renterMode && onDateClick) {
+      if (key < todayKey) return
+      if (!pickingCheckout && blockedLookup.get(key)) return
       onDateClick(key)
       return
     }
@@ -262,6 +281,7 @@ export default function ListingCalendar({
           onDayClick={onDayClick}
           checkIn={checkIn}
           checkOut={checkOut}
+          todayKey={todayKey}
           leadingNav={
             <button
               type="button"
@@ -282,6 +302,7 @@ export default function ListingCalendar({
           onDayClick={onDayClick}
           checkIn={checkIn}
           checkOut={checkOut}
+          todayKey={todayKey}
           trailingNav={
             <button
               type="button"

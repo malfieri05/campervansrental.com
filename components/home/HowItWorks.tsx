@@ -51,11 +51,11 @@ export default function HowItWorks() {
     <section
       id="how-it-works"
       ref={sectionRef}
-      className="bg-cream-100 py-24 px-6 lg:px-10 overflow-hidden"
+      className="bg-cream-100 py-14 sm:py-24 px-6 lg:px-10 overflow-hidden"
     >
       <div className="max-w-6xl mx-auto">
         {/* Section Header */}
-        <div className="text-center mb-20">
+          <div className="text-center mb-12 sm:mb-20">
           <div className="flex items-center justify-center gap-4 mb-5">
             <div className="h-px w-16 bg-gradient-to-r from-transparent to-gold-400" />
             <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-gold-500">

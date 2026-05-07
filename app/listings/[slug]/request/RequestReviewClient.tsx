@@ -3,12 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useCallback, useEffect } from 'react'
-import {
-  differenceInCalendarDays,
-  format,
-  parseISO,
-  addDays,
-} from 'date-fns'
+import { differenceInCalendarDays, format, parseISO } from 'date-fns'
 import {
   CalendarDays,
   ChevronDown,
@@ -19,6 +14,7 @@ import {
   X,
 } from 'lucide-react'
 import type { BlockRange } from '@/lib/availability'
+import { resolveListingDateClick } from '@/lib/listing-date-selection'
 import type { Van } from '@/types'
 import ListingCalendar from '@/components/listing/ListingCalendar'
 import ReservationFeeLabelWithTooltip from '@/components/booking/ReservationFeeLabelWithTooltip'
@@ -38,10 +34,6 @@ interface Props {
 
 function fmt(iso: string) {
   return format(parseISO(iso), 'EEE, MMM d')
-}
-
-function dayKey(d: Date) {
-  return format(d, 'yyyy-MM-dd')
 }
 
 export default function RequestReviewClient({
@@ -79,17 +71,21 @@ export default function RequestReviewClient({
 
   const handleDateClick = useCallback(
     (key: string) => {
-      if (!checkIn || (checkIn && checkOut)) {
-        setCheckIn(key)
-        setCheckOut(null)
-        return
+      const next = resolveListingDateClick({
+        key,
+        checkIn,
+        checkOut,
+        blocks,
+        minNights,
+      })
+      if (!next) return
+      setCheckIn(next.checkIn)
+      setCheckOut(next.checkOut)
+      if (next.checkOut) {
+        setTimeout(() => setCalendarOpen(false), 200)
       }
-      const minCheckout = dayKey(addDays(parseISO(checkIn), minNights))
-      if (key <= checkIn || key < minCheckout) return
-      setCheckOut(key)
-      setTimeout(() => setCalendarOpen(false), 200)
     },
-    [checkIn, checkOut, minNights]
+    [checkIn, checkOut, minNights, blocks]
   )
 
   // Update URL params when dates change so back-navigation restores state

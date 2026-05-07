@@ -6,6 +6,10 @@ import Footer from '@/components/layout/Footer'
 import { DevSupabaseConfigBanner } from '@/components/dev/DevSupabaseConfigBanner'
 
 export const metadata: Metadata = {
+  icons: {
+    icon: '/favicon.png',
+    apple: '/favicon.png',
+  },
   title: 'Camper Van Rentals | Luxury Outdoor Adventures',
   description:
     'Premium camper van rentals for the discerning traveler. Experience the wilderness in uncompromising luxury with our hand-curated fleet of fully-equipped vans.',

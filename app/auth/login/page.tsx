@@ -45,7 +45,7 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen bg-cream-100 pt-8 pb-16 px-6">
-      <div className="max-w-md mx-auto bg-cream-50 border border-cream-300/60 rounded-sm p-8 shadow-luxury-sm">
+      <div className="max-w-md mx-auto bg-cream-50 border border-cream-300/60 rounded-sm p-5 sm:p-8 shadow-luxury-sm">
         <h1 className="font-serif text-2xl font-semibold text-charcoal mb-2">Log in</h1>
         <p className="font-sans text-sm text-charcoal/50 mb-8">
           Access your account to continue checkout or manage listings.

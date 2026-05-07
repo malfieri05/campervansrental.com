@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutGroup, motion } from 'framer-motion'
-import { Menu, X, Tent } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
+import SiteLogo from '@/components/layout/SiteLogo'
 import UserAuthNav from '@/components/layout/UserAuthNav'
 import { createClient } from '@/lib/supabase/client'
 import { isSupabaseConfigured } from '@/lib/env'
@@ -144,18 +145,12 @@ export default function Navbar() {
           {/* 1fr | auto | 1fr — nav track is truly centered in the bar (not offset by uneven logo vs. profile width) */}
           <div className="flex h-20 items-center justify-between lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-3 group shrink-0 lg:justify-self-start">
-              <div className="w-9 h-9 bg-gold-400 flex items-center justify-center rounded-sm group-hover:bg-gold-300 transition-colors duration-300">
-                <Tent className="w-5 h-5 text-forest-950" strokeWidth={1.5} />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-serif text-cream-50 font-semibold text-base leading-tight tracking-wide group-hover:text-gold-300 transition-colors duration-300">
-                  Camper Van
-                </span>
-                <span className="font-display text-gold-400 text-[0.6rem] font-bold uppercase tracking-[0.2em] leading-tight">
-                  Rentals
-                </span>
-              </div>
+            <Link href="/" className="group flex shrink-0 items-center lg:justify-self-start">
+              <SiteLogo
+                priority
+                className="transition-opacity group-hover:opacity-90"
+                imageClassName="max-w-[min(96px,32vw)] sm:max-w-[148px]"
+              />
             </Link>
 
             {/* Desktop Navigation — host and traveler tabs centered (same layout as host) */}

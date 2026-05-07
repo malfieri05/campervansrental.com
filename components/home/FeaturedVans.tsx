@@ -6,10 +6,10 @@ export default async function FeaturedVans() {
   const listings = await getPublishedListings()
 
   return (
-    <section className="bg-cream-100 py-24 px-6 lg:px-10">
+    <section className="bg-cream-100 py-14 sm:py-24 px-6 lg:px-10">
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
-        <div className="text-center mb-16">
+          <div className="text-center mb-10 sm:mb-16">
           <div className="flex items-center justify-center gap-4">
             <div className="h-px w-16 bg-gradient-to-r from-transparent to-gold-400" />
             <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-gold-500">
