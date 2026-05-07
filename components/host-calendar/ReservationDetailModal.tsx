@@ -5,6 +5,7 @@ import { X, ExternalLink, MapPin, Calendar, DollarSign, User, Loader2 } from 'lu
 import { createClient } from '@/lib/supabase/client'
 import { format, parseISO } from 'date-fns'
 import Link from 'next/link'
+import { ProfileInitialsContent } from '@/components/ui/ProfileInitialsContent'
 
 type ReservationDetail = {
   id: string
@@ -33,12 +34,14 @@ type Props = {
 const STATUS_STYLES: Record<string, string> = {
   confirmed:       'bg-emerald-100 text-emerald-800',
   pending_payment: 'bg-amber-100 text-amber-800',
+  pending_host: 'bg-amber-100 text-amber-800',
   cancelled:       'bg-neutral-100 text-neutral-500',
 }
 
 const STATUS_LABELS: Record<string, string> = {
   confirmed:       'Confirmed',
   pending_payment: 'Pending',
+  pending_host: 'Awaiting approval',
   cancelled:       'Cancelled',
 }
 
@@ -121,10 +124,11 @@ export default function ReservationDetailModal({ reservationId, onClose }: Props
 
             {/* Guest */}
             <div className="px-6 py-4 flex items-center gap-3">
-              <div className="h-9 w-9 rounded-full bg-neutral-800 flex items-center justify-center shrink-0">
-                <span className="text-xs font-bold text-white">
-                  {initials(detail.guest_first_name, detail.guest_last_name)}
-                </span>
+              <div className="grid h-9 w-9 shrink-0 grid-cols-1 grid-rows-1 overflow-hidden rounded-full bg-neutral-800">
+                <ProfileInitialsContent
+                  initials={initials(detail.guest_first_name, detail.guest_last_name)}
+                  textClassName="font-sans text-white"
+                />
               </div>
               <div>
                 <p className="text-sm font-semibold text-neutral-900">

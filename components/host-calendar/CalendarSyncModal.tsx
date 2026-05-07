@@ -2,18 +2,26 @@
 
 import { useState, useRef } from 'react'
 import { X, RefreshCw, Trash2, Plus, Copy, Download, Check, AlertCircle, Loader2 } from 'lucide-react'
-import type { ExternalFeed } from '@/app/host/calendar/page'
+import type { ExternalFeed, ExportUrlFetchStatus } from '@/app/host/calendar/page'
 import { format } from 'date-fns'
 
 type Props = {
   listingId: string
   feeds: ExternalFeed[]
   exportUrl: string | null
+  exportUrlStatus: ExportUrlFetchStatus
   onClose: () => void
   onFeedsChange: (feeds: ExternalFeed[]) => void
 }
 
-export default function CalendarSyncModal({ listingId, feeds, exportUrl, onClose, onFeedsChange }: Props) {
+export default function CalendarSyncModal({
+  listingId,
+  feeds,
+  exportUrl,
+  exportUrlStatus,
+  onClose,
+  onFeedsChange,
+}: Props) {
   const [localFeeds, setLocalFeeds] = useState<ExternalFeed[]>(feeds)
   const [addName, setAddName] = useState('')
   const [addUrl, setAddUrl] = useState('')
@@ -211,12 +219,27 @@ export default function CalendarSyncModal({ listingId, feeds, exportUrl, onClose
           </div>
 
           {/* Export section */}
-          {exportUrl && (
-            <div className="border-t border-neutral-100 px-6 py-5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-1">Export your calendar</p>
-              <p className="text-xs text-neutral-400 mb-3">
-                Copy this URL into other platforms (Airbnb, VRBO, Outdoorsy) so they can import your CampervansRental availability.
+          <div className="border-t border-neutral-100 px-6 py-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-1">Export your calendar</p>
+            <p className="text-xs text-neutral-400 mb-3">
+              Copy this URL into other platforms (Airbnb, VRBO, Outdoorsy) so they can import your CampervansRental availability.
+            </p>
+            {exportUrlStatus === 'loading' && (
+              <p className="inline-flex items-center gap-2 text-xs text-neutral-500">
+                <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" aria-hidden />
+                Loading export link…
               </p>
+            )}
+            {exportUrlStatus === 'unavailable' && (
+              <p className="text-xs text-amber-800/90 leading-relaxed">
+                Export link unavailable. Your server admin must set{' '}
+                <code className="rounded bg-amber-100/80 px-1 py-0.5 font-mono text-[10px]">CALENDAR_EXPORT_SECRET</code>
+                {' '}in environment variables (and{' '}
+                <code className="rounded bg-amber-100/80 px-1 py-0.5 font-mono text-[10px]">NEXT_PUBLIC_SITE_URL</code>
+                {' '}for production). Then reload this page.
+              </p>
+            )}
+            {exportUrlStatus === 'ready' && exportUrl && (
               <div className="flex items-center gap-2">
                 <input
                   ref={urlRef}
@@ -225,6 +248,7 @@ export default function CalendarSyncModal({ listingId, feeds, exportUrl, onClose
                   className="flex-1 min-w-0 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-600 font-mono"
                 />
                 <button
+                  type="button"
                   onClick={handleCopyExport}
                   title="Copy URL"
                   className="shrink-0 rounded-xl border border-neutral-200 bg-white p-2 text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 transition-colors"
@@ -240,8 +264,8 @@ export default function CalendarSyncModal({ listingId, feeds, exportUrl, onClose
                   <Download className="h-4 w-4" />
                 </a>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Footer */}

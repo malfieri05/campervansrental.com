@@ -1,10 +1,13 @@
 import type { Config } from 'tailwindcss'
+import { CALENDAR_FEED_COLOR_SAFELIST } from './lib/calendar-feed-colors'
 
 const config: Config = {
+  safelist: CALENDAR_FEED_COLOR_SAFELIST,
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './lib/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     extend: {

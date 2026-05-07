@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Truck, Instagram, Facebook, Youtube, ArrowRight } from 'lucide-react'
+import { Truck, Instagram, Facebook, Youtube } from 'lucide-react'
 
 const footerLinks = {
   company: {
@@ -81,29 +81,9 @@ export default function Footer() {
                 </span>
               </div>
             </Link>
-            <p className="font-serif italic text-cream-200/70 text-base leading-relaxed mb-8 max-w-xs">
+            <p className="font-serif italic text-cream-200/70 text-base leading-relaxed max-w-xs">
               Adventure in luxury. Explore the world differently.
             </p>
-
-            {/* Newsletter */}
-            <div>
-              <p className="font-display text-xs font-bold uppercase tracking-[0.15em] text-gold-400 mb-3">
-                Join the Adventure
-              </p>
-              <p className="text-sm text-cream-200/60 mb-4 font-sans">
-                Exclusive destinations, van tips, and early access to new fleet arrivals.
-              </p>
-              <div className="flex gap-2">
-                <input
-                  type="email"
-                  placeholder="your@email.com"
-                  className="flex-1 bg-forest-900/60 border border-forest-700/50 text-cream-100 text-sm px-4 py-3 rounded-sm placeholder:text-cream-300/30 focus:outline-none focus:border-gold-500/70 transition-colors"
-                />
-                <button className="bg-gold-400 hover:bg-gold-300 text-forest-950 px-4 py-3 rounded-sm transition-colors duration-200 flex items-center justify-center">
-                  <ArrowRight className="w-4 h-4" strokeWidth={2} />
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Link Columns */}

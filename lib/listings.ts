@@ -1,4 +1,4 @@
-import { vans } from '@/lib/data'
+import { vans, formatVanLengthFt } from '@/lib/data'
 import { isSupabaseConfigured } from '@/lib/env'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import type { Amenity, FAQ, Van } from '@/types'
@@ -38,6 +38,7 @@ function mapStaticVan(v: Van): Van {
   return {
     ...v,
     listingUuid: v.listingUuid ?? null,
+    length: formatVanLengthFt(v.length) ?? '',
   }
 }
 
@@ -58,7 +59,7 @@ function mapRowToVan(row: ListingRow): Van {
     images,
     pricePerNight: Math.round(row.price_per_night_cents / 100),
     sleeps: row.sleeps,
-    length: row.length_label || '',
+    length: formatVanLengthFt(row.length_label) ?? '',
     features: row.features || [],
     amenities,
     category: row.category,

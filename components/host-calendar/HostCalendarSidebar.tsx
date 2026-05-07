@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Image from 'next/image'
-import { ChevronDown, CalendarClock, Settings2 } from 'lucide-react'
-import type { HostListingMeta, ExternalFeed } from '@/app/host/calendar/page'
+import { ChevronDown, CalendarClock, Settings2, Link2, Check, Loader2 } from 'lucide-react'
+import type { HostListingMeta, ExternalFeed, ExportUrlFetchStatus } from '@/app/host/calendar/page'
 import CalendarSyncModal from './CalendarSyncModal'
+import { getFeedColorTheme } from '@/lib/calendar-feed-colors'
 
 export type TripStatusFilter = {
   pending: boolean
@@ -22,6 +23,7 @@ type Props = {
   feeds: ExternalFeed[]
   onFeedsChange: (feeds: ExternalFeed[]) => void
   exportUrl: string | null
+  exportUrlStatus: ExportUrlFetchStatus
   onOpenAvailability: () => void
 }
 
@@ -41,15 +43,32 @@ export default function HostCalendarSidebar({
   feeds,
   onFeedsChange,
   exportUrl,
+  exportUrlStatus,
   onOpenAvailability,
 }: Props) {
   const [listingDropOpen, setListingDropOpen] = useState(false)
   const [syncModalOpen, setSyncModalOpen] = useState(false)
+  const [exportCopied, setExportCopied] = useState(false)
+  const exportUrlInputRef = useRef<HTMLInputElement>(null)
 
   const selected = listings.find((l) => l.id === selectedId) ?? listings[0] ?? null
 
   const toggleFilter = (key: keyof TripStatusFilter) => {
     onFiltersChange({ ...filters, [key]: !filters[key] })
+  }
+
+  const handleCopyExportUrl = async () => {
+    if (!exportUrl) return
+    try {
+      await navigator.clipboard.writeText(exportUrl)
+      setExportCopied(true)
+      window.setTimeout(() => setExportCopied(false), 2000)
+    } catch {
+      const el = exportUrlInputRef.current
+      if (!el) return
+      el.focus()
+      el.select()
+    }
   }
 
   return (
@@ -127,7 +146,7 @@ export default function HostCalendarSidebar({
           <button
             type="button"
             onClick={onOpenAvailability}
-            className="mt-3 w-full rounded-xl bg-gold-400 py-2.5 text-sm font-semibold text-white shadow-gold ring-1 ring-gold-600/30 hover:bg-gold-300 transition-colors"
+            className="mt-3 mx-auto block w-[85%] rounded-xl bg-gold-400 py-[calc(0.625rem*0.85)] text-center text-[calc(0.875rem*0.85)] font-semibold text-white shadow-none ring-1 ring-gold-600/30 hover:bg-gold-300 transition-colors"
           >
             Update availability
           </button>
@@ -188,9 +207,11 @@ export default function HostCalendarSidebar({
             </button>
           ) : (
             <ul className="space-y-1.5">
-              {feeds.map((f) => (
+              {feeds.map((f, i) => (
                 <li key={f.id} className="flex items-center gap-2">
-                  <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${f.last_sync_error ? 'bg-red-400' : 'bg-emerald-400'}`} />
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full shrink-0 ${f.last_sync_error ? 'bg-red-400' : getFeedColorTheme(i).dotClass}`}
+                  />
                   <span className="text-xs text-neutral-600 truncate">{f.display_name}</span>
                 </li>
               ))}
@@ -198,12 +219,65 @@ export default function HostCalendarSidebar({
                 <button
                   type="button"
                   onClick={() => setSyncModalOpen(true)}
-                  className="text-xs text-gold-700 hover:underline mt-0.5"
+                  className="mt-0.5 text-[calc(0.75rem*1.1)] leading-tight text-gold-700 hover:underline"
                 >
                   Manage
                 </button>
               </li>
             </ul>
+          )}
+
+          {selectedId && (
+            <div className="mt-4 border-t border-neutral-100 pt-3">
+              <p className="text-sm font-semibold text-neutral-900 mb-1 leading-snug">Export Calendar:</p>
+              <p className="text-xs text-neutral-500 mb-2 leading-snug">
+                Paste this link on other platforms to sync your bookings.
+              </p>
+              {exportUrlStatus === 'loading' && (
+                <p className="inline-flex items-center gap-2 text-xs text-neutral-500">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" aria-hidden />
+                  Loading your link…
+                </p>
+              )}
+              {exportUrlStatus === 'unavailable' && (
+                <p className="text-xs text-amber-800/90 leading-snug">
+                  Calendar link isn&apos;t available yet. Ask your admin to set{' '}
+                  <code className="rounded bg-amber-100/80 px-1 py-0.5 text-[10px]">CALENDAR_EXPORT_SECRET</code>{' '}
+                  in server environment variables, then reload.
+                </p>
+              )}
+              {exportUrlStatus === 'ready' && exportUrl && (
+                <>
+                  <input
+                    ref={exportUrlInputRef}
+                    type="text"
+                    readOnly
+                    value={exportUrl}
+                    tabIndex={-1}
+                    aria-hidden
+                    className="pointer-events-none fixed left-0 top-0 h-px w-px opacity-0"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCopyExportUrl}
+                    aria-label={exportCopied ? 'Calendar URL copied to clipboard' : 'Copy calendar subscription URL to clipboard'}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-gold-700 hover:text-gold-600 transition-colors"
+                  >
+                    {exportCopied ? (
+                      <>
+                        <Check className="h-4 w-4 text-emerald-600" aria-hidden />
+                        <span className="text-emerald-700">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Copy URL</span>
+                        <Link2 className="h-4 w-4" aria-hidden />
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
+            </div>
           )}
         </div>
       </aside>
@@ -213,6 +287,7 @@ export default function HostCalendarSidebar({
           listingId={selectedId}
           feeds={feeds}
           exportUrl={exportUrl}
+          exportUrlStatus={exportUrlStatus}
           onClose={() => setSyncModalOpen(false)}
           onFeedsChange={(updated) => { onFeedsChange(updated); }}
         />

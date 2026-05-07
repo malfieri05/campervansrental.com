@@ -10,7 +10,7 @@ import {
   type ChangeEvent,
 } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MapPin, FileText, ChevronRight, Check, Upload, X, PenLine } from 'lucide-react'
+import { MapPin, FileText, ChevronRight, Check, Upload, X } from 'lucide-react'
 import {
   buildAgreementSections,
   AGREEMENT_VERSION,
@@ -38,6 +38,8 @@ interface Props {
   tripSummary: TripSummary | null
   stripeSessionId: string
   reservationId: string | null
+  /** Present when reservation row was loaded server-side */
+  reservationStatus?: string | null
   hostName?: string
   vehicleYear?: string
   vehicleMake?: string
@@ -46,13 +48,12 @@ interface Props {
   licensePlate?: string
 }
 
-type Step = 'dl' | 'insurance' | 'agreement' | 'signature'
+type Step = 'dl' | 'insurance' | 'agreement'
 
 const STEPS: { id: Step; label: string }[] = [
   { id: 'dl',        label: 'Driver License' },
   { id: 'insurance', label: 'Insurance' },
   { id: 'agreement', label: 'Agreement' },
-  { id: 'signature', label: 'Signature' },
 ]
 
 function money(cents: number) {
@@ -63,80 +64,169 @@ function fmtDate(s: string) {
   catch { return s }
 }
 
-// ─── Signature canvas ─────────────────────────────────────────────────────────
+/** Client-only: rasterize typed name as a script signature (submit fallback if canvas sync lags). */
+function typedNameToSignatureDataUrl(text: string): string | null {
+  const t = text.trim()
+  if (!t || typeof document === 'undefined') return null
+  const canvas = document.createElement('canvas')
+  canvas.width = 480
+  canvas.height = 90
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return null
+  ctx.fillStyle = '#1a1a1a'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  const cx = canvas.width / 2
+  const cy = canvas.height / 2
+  const maxW = canvas.width - 40
+  let fontSize = 40
+  for (; fontSize >= 18; fontSize -= 2) {
+    ctx.font = `italic 900 ${fontSize}px "Segoe Script", "Brush Script MT", "Snell Roundhand", "Apple Chancery", cursive`
+    if (ctx.measureText(t).width <= maxW) break
+  }
+  ctx.font = `italic 900 ${fontSize}px "Segoe Script", "Brush Script MT", "Snell Roundhand", "Apple Chancery", cursive`
+  ctx.fillText(t, cx, cy)
+  return canvas.toDataURL('image/png')
+}
+
+// ─── Signature canvas (draw and/or typed “script” preview) ────────────────────
 
 function SignatureCanvas({
   onSave,
+  typedSignature,
 }: {
   onSave: (dataUrl: string | null) => void
+  typedSignature: string
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const drawing   = useRef(false)
+  const drawing = useRef(false)
+  const typedPreviewActive = useRef(false)
+  const typedPropRef = useRef(typedSignature)
+  typedPropRef.current = typedSignature
+
   const [isEmpty, setIsEmpty] = useState(true)
+
+  const paintTypedName = useCallback(
+    (text: string) => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const ctx = canvas.getContext('2d')!
+      const t = text.trim()
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      if (!t) {
+        typedPreviewActive.current = false
+        setIsEmpty(true)
+        onSave(null)
+        return
+      }
+      ctx.save()
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle = '#1a1a1a'
+      const cx = canvas.width / 2
+      const cy = canvas.height / 2
+      const maxW = canvas.width - 40
+      let fontSize = 40
+      for (; fontSize >= 18; fontSize -= 2) {
+        ctx.font = `italic 900 ${fontSize}px "Segoe Script", "Brush Script MT", "Snell Roundhand", "Apple Chancery", cursive`
+        if (ctx.measureText(t).width <= maxW) break
+      }
+      ctx.font = `italic 900 ${fontSize}px "Segoe Script", "Brush Script MT", "Snell Roundhand", "Apple Chancery", cursive`
+      ctx.fillText(t, cx, cy)
+      ctx.restore()
+      typedPreviewActive.current = true
+      setIsEmpty(false)
+      onSave(canvas.toDataURL('image/png'))
+    },
+    [onSave]
+  )
+
+  // When the typed name changes, refresh the script preview (unless user is mid-stroke)
+  useEffect(() => {
+    if (drawing.current) return
+    paintTypedName(typedSignature)
+  }, [typedSignature, paintTypedName])
 
   const getPos = (e: MouseEvent | TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect()
-    const src  = 'touches' in e ? e.touches[0] : e
+    const src = 'touches' in e ? e.touches[0] : e
     return { x: src.clientX - rect.left, y: src.clientY - rect.top }
   }
 
-  const start = useCallback((e: MouseEvent | TouchEvent) => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    e.preventDefault()
-    drawing.current = true
-    const ctx = canvas.getContext('2d')!
-    const { x, y } = getPos(e, canvas)
-    ctx.beginPath()
-    ctx.moveTo(x, y)
+  const start = useCallback(
+    (e: MouseEvent | TouchEvent) => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      e.preventDefault()
+      const ctx = canvas.getContext('2d')!
+      if (typedPreviewActive.current) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        typedPreviewActive.current = false
+        setIsEmpty(true)
+        onSave(null)
+      }
+      drawing.current = true
+      const { x, y } = getPos(e, canvas)
+      ctx.beginPath()
+      ctx.moveTo(x, y)
+    },
+    [onSave]
+  )
+
+  const move = useCallback(
+    (e: MouseEvent | TouchEvent) => {
+      if (!drawing.current) return
+      const canvas = canvasRef.current
+      if (!canvas) return
+      e.preventDefault()
+      const ctx = canvas.getContext('2d')!
+      const { x, y } = getPos(e, canvas)
+      ctx.lineTo(x, y)
+      ctx.strokeStyle = '#1a1a1a'
+      ctx.lineWidth = 2
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      ctx.stroke()
+      setIsEmpty(false)
+      onSave(canvas.toDataURL('image/png'))
+    },
+    [onSave]
+  )
+
+  const end = useCallback(() => {
+    drawing.current = false
   }, [])
-
-  const move = useCallback((e: MouseEvent | TouchEvent) => {
-    if (!drawing.current) return
-    const canvas = canvasRef.current
-    if (!canvas) return
-    e.preventDefault()
-    const ctx = canvas.getContext('2d')!
-    const { x, y } = getPos(e, canvas)
-    ctx.lineTo(x, y)
-    ctx.strokeStyle = '#1a1a1a'
-    ctx.lineWidth   = 2
-    ctx.lineCap     = 'round'
-    ctx.lineJoin    = 'round'
-    ctx.stroke()
-    setIsEmpty(false)
-    onSave(canvas.toDataURL('image/png'))
-  }, [onSave])
-
-  const end = useCallback(() => { drawing.current = false }, [])
 
   const clear = () => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')!
     ctx.clearRect(0, 0, canvas.width, canvas.height)
+    typedPreviewActive.current = false
     setIsEmpty(true)
     onSave(null)
+    const t = typedPropRef.current.trim()
+    if (t) paintTypedName(t)
   }
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    canvas.addEventListener('mousedown',  start  as EventListener)
-    canvas.addEventListener('mousemove',  move   as EventListener)
-    canvas.addEventListener('mouseup',    end)
+    canvas.addEventListener('mousedown', start as EventListener)
+    canvas.addEventListener('mousemove', move as EventListener)
+    canvas.addEventListener('mouseup', end)
     canvas.addEventListener('mouseleave', end)
-    canvas.addEventListener('touchstart', start  as EventListener, { passive: false })
-    canvas.addEventListener('touchmove',  move   as EventListener, { passive: false })
-    canvas.addEventListener('touchend',   end)
+    canvas.addEventListener('touchstart', start as EventListener, { passive: false })
+    canvas.addEventListener('touchmove', move as EventListener, { passive: false })
+    canvas.addEventListener('touchend', end)
     return () => {
-      canvas.removeEventListener('mousedown',  start  as EventListener)
-      canvas.removeEventListener('mousemove',  move   as EventListener)
-      canvas.removeEventListener('mouseup',    end)
+      canvas.removeEventListener('mousedown', start as EventListener)
+      canvas.removeEventListener('mousemove', move as EventListener)
+      canvas.removeEventListener('mouseup', end)
       canvas.removeEventListener('mouseleave', end)
-      canvas.removeEventListener('touchstart', start  as EventListener)
-      canvas.removeEventListener('touchmove',  move   as EventListener)
-      canvas.removeEventListener('touchend',   end)
+      canvas.removeEventListener('touchstart', start as EventListener)
+      canvas.removeEventListener('touchmove', move as EventListener)
+      canvas.removeEventListener('touchend', end)
     }
   }, [start, move, end])
 
@@ -145,13 +235,15 @@ function SignatureCanvas({
       <canvas
         ref={canvasRef}
         width={480}
-        height={180}
-        aria-label="Signature pad — draw your signature here"
+        height={90}
+        aria-label="Signature — draw here or your typed name appears as a script signature"
         className="w-full border-2 border-charcoal/20 rounded-lg bg-white cursor-crosshair touch-none"
         style={{ maxWidth: '100%' }}
       />
       <div className="flex items-center justify-between mt-2">
-        <p className="font-sans text-xs text-charcoal/40">Draw your signature above</p>
+        <p className="font-sans text-xs text-charcoal/40">
+          Draw in the box above, or type your name below.
+        </p>
         <button
           type="button"
           onClick={clear}
@@ -344,6 +436,7 @@ export default function BookingSuccessClient({
   tripSummary,
   stripeSessionId,
   reservationId,
+  reservationStatus = null,
   hostName = 'the Host',
   vehicleYear = '',
   vehicleMake = '',
@@ -481,9 +574,13 @@ export default function BookingSuccessClient({
     try {
       let signaturePath: string | null = null
 
-      // Upload canvas signature as PNG if drawn
-      if (sigDataUrl) {
-        const blob      = await (await fetch(sigDataUrl)).blob()
+      const imageDataUrl =
+        sigDataUrl ??
+        (sigTyped.trim() ? typedNameToSignatureDataUrl(sigTyped.trim()) : null)
+
+      // Upload canvas / typed script signature as PNG when available
+      if (imageDataUrl) {
+        const blob      = await (await fetch(imageDataUrl)).blob()
         const file      = new File([blob], 'signature.png', { type: 'image/png' })
         const fd        = new FormData()
         fd.append('session_id', stripeSessionId)
@@ -511,7 +608,6 @@ export default function BookingSuccessClient({
         throw new Error(b.error ?? 'Save failed')
       }
       markComplete('agreement')
-      markComplete('signature')
       setAllDone(true)
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : 'Save failed')
@@ -523,6 +619,8 @@ export default function BookingSuccessClient({
   const dlValid      = Boolean(dlName.trim() && dlNumber.trim() && dlState.trim())
   const insValid     = Boolean(insCarrier.trim() && insPolicy.trim() && insLiab && insComp)
   const sigValid     = Boolean((sigDataUrl || sigTyped.trim()) && agreementRead)
+
+  const awaitingHostApproval = reservationStatus === 'pending_host'
 
   if (!paid || !tripSummary) {
     return (
@@ -579,7 +677,7 @@ export default function BookingSuccessClient({
 
           <div className="p-8 text-center space-y-6">
             <h1 className="font-serif text-3xl font-semibold text-charcoal">
-              Your trip is booked!
+              {awaitingHostApproval ? 'Payment received!' : 'Your trip is booked!'}
             </h1>
 
             {/* Trip details */}
@@ -615,15 +713,21 @@ export default function BookingSuccessClient({
               </div>
             </div>
 
-            {/* Confirmation email notice — directly after pricing */}
-            <section aria-label="Confirmation email" className="text-center px-1">
-              <p className="font-sans text-xl sm:text-2xl font-bold text-charcoal leading-snug">
-                You will receive a confirmation email with your trip information!
-              </p>
+            {/* Confirmation / next steps — directly after pricing */}
+            <section aria-label="Booking status" className="text-center px-1">
+              {awaitingHostApproval ? (
+                <p className="font-sans text-base sm:text-lg font-semibold text-charcoal leading-relaxed">
+                  {hostName} will review your dates next. Watch your inbox — you&apos;ll get a confirmation email when your trip is approved. Your rental paperwork (driver license, insurance, and agreement) unlocks after that.
+                </p>
+              ) : (
+                <p className="font-sans text-xl sm:text-2xl font-bold text-charcoal leading-snug">
+                  You will receive a confirmation email with your trip information!
+                </p>
+              )}
             </section>
 
-            {/* Rental agreement CTA or completed badge */}
-            {!allDone ? (
+            {/* Rental agreement CTA (hidden once complete — success is shown in the workspace panel) */}
+            {!allDone && !awaitingHostApproval && (
               <div className="rounded-xl border border-gold-400/40 bg-gold-50/60 p-5 text-left">
                 <div className="flex items-start gap-3 mb-4">
                   <div className="w-8 h-8 rounded-full bg-gold-100 flex items-center justify-center shrink-0 mt-0.5">
@@ -644,16 +748,6 @@ export default function BookingSuccessClient({
                   Review &amp; sign agreement
                   <ChevronRight className="w-4 h-4" />
                 </button>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-forest-500/30 bg-forest-50/60 p-4 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-forest-100 flex items-center justify-center shrink-0">
-                  <Check className="w-4 h-4 text-forest-700" strokeWidth={2.5} />
-                </div>
-                <div>
-                  <p className="font-sans text-sm font-semibold text-forest-800">Agreement signed</p>
-                  <p className="font-sans text-xs text-forest-700/70 mt-0.5">Your rental agreement is on file.</p>
-                </div>
               </div>
             )}
 
@@ -677,28 +771,52 @@ export default function BookingSuccessClient({
               transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.05 }}
               className="flex-1 min-w-0 bg-cream-50 border border-cream-300/60 rounded-sm shadow-luxury-sm p-6 sm:p-8"
             >
-              <h2
-                ref={workspaceTitleRef}
-                tabIndex={-1}
-                className="font-serif text-2xl font-semibold text-charcoal mb-2 focus-visible:outline-none"
-              >
-                Rental Agreement
-              </h2>
-              <p className="font-sans text-xs text-charcoal/45 mb-6">
-                Version {AGREEMENT_VERSION} · All information is stored securely.
-              </p>
-
-              <StepIndicator steps={STEPS} current={currentStep} completed={completedSteps} />
-
-              {/* Error banner */}
-              {saveError && (
-                <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 font-sans text-sm text-red-700">
-                  {saveError}
+              {allDone ? (
+                <div
+                  className="flex flex-col items-center justify-center text-center py-12 sm:py-16 px-2 min-h-[min(420px,65vh)]"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <div className="w-full max-w-md rounded-2xl border border-forest-500/30 bg-gradient-to-b from-forest-50/95 to-forest-50/70 px-8 sm:px-10 py-10 sm:py-12 shadow-sm">
+                    <div className="w-16 h-16 rounded-full bg-forest-100 flex items-center justify-center mx-auto mb-6 ring-4 ring-forest-200/40">
+                      <Check className="w-8 h-8 text-forest-700" strokeWidth={2.25} aria-hidden />
+                    </div>
+                    <h2 className="font-serif text-2xl sm:text-[1.65rem] font-semibold text-forest-900 tracking-tight mb-3">
+                      Agreement signed
+                    </h2>
+                    <p className="font-sans text-sm text-forest-800/90 leading-relaxed mb-2">
+                      Your rental agreement is complete and on file.
+                    </p>
+                    <p className="font-sans text-sm text-forest-800/75 leading-relaxed">
+                      A copy of your signed rental agreement will be sent to your email for your records, along with your
+                      driver license and insurance details as submitted.
+                    </p>
+                  </div>
                 </div>
-              )}
+              ) : (
+                <>
+                  <h2
+                    ref={workspaceTitleRef}
+                    tabIndex={-1}
+                    className="font-serif text-2xl font-semibold text-charcoal mb-2 focus-visible:outline-none"
+                  >
+                    Rental Agreement
+                  </h2>
+                  <p className="font-sans text-xs text-charcoal/45 mb-6">
+                    Version {AGREEMENT_VERSION} · All information is stored securely.
+                  </p>
 
-              {/* ── Step: Driver License ── */}
-              {currentStep === 'dl' && (
+                  <StepIndicator steps={STEPS} current={currentStep} completed={completedSteps} />
+
+                  {/* Error banner */}
+                  {saveError && (
+                    <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 font-sans text-sm text-red-700">
+                      {saveError}
+                    </div>
+                  )}
+
+                  {/* ── Step: Driver License ── */}
+                  {currentStep === 'dl' && (
                 <div className="space-y-5">
                   <div className="rounded-lg bg-amber-50 border border-amber-200/70 px-4 py-3 font-sans text-xs text-amber-800">
                     Your driver license information is collected for identity verification purposes only and is stored securely.
@@ -864,7 +982,7 @@ export default function BookingSuccessClient({
                 </div>
               )}
 
-              {/* ── Step: Agreement ── */}
+              {/* ── Step: Agreement + signature (combined) ── */}
               {currentStep === 'agreement' && (
                 <div className="space-y-5">
                   <div
@@ -899,57 +1017,42 @@ export default function BookingSuccessClient({
                     </span>
                   </label>
 
+                  <div className="border-t border-charcoal/10 pt-5 space-y-4">
+                    <div
+                      className={`space-y-4 rounded-xl transition ${!agreementRead ? 'pointer-events-none opacity-45 select-none' : ''}`}
+                      aria-disabled={!agreementRead}
+                    >
+                      <p className="font-sans text-sm text-charcoal/60">
+                        Draw your signature below, or type your full legal name.
+                      </p>
+
+                      <SignatureCanvas onSave={setSigDataUrl} typedSignature={sigTyped} />
+
+                      <div>
+                        <FieldLabel>Or type your full legal name</FieldLabel>
+                        <Input
+                          type="text"
+                          value={sigTyped}
+                          onChange={(e) => setSigTyped(e.target.value)}
+                          placeholder={dlName || 'Full legal name'}
+                          autoComplete="name"
+                          disabled={!agreementRead}
+                        />
+                        <p className="font-sans text-xs text-charcoal/40 mt-1">
+                          Typing your name here constitutes a legal electronic signature.
+                        </p>
+                      </div>
+                    </div>
+
+                    <p className="font-sans text-xs text-charcoal/45">
+                      By submitting, you agree that your electronic signature is legally binding under the Electronic Signatures in Global and National Commerce Act (ESIGN). Your IP address and timestamp will be recorded.
+                    </p>
+                  </div>
+
                   <div className="flex gap-3 pt-1">
                     <button
                       type="button"
                       onClick={() => setCurrentStep('insurance')}
-                      className="flex-1 rounded-full border border-charcoal/20 px-4 py-2.5 font-display text-xs font-bold uppercase tracking-widest text-charcoal/60 hover:text-charcoal hover:border-charcoal/35 transition focus-visible:outline-none"
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { if (agreementRead) setCurrentStep('signature') }}
-                      disabled={!agreementRead}
-                      className="flex-[2] inline-flex items-center justify-center gap-2 rounded-full bg-gold-400 px-6 py-2.5 font-display text-xs font-bold uppercase tracking-widest text-white shadow-gold transition hover:bg-gold-300 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50"
-                    >
-                      Continue to sign
-                      <PenLine className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* ── Step: Signature ── */}
-              {currentStep === 'signature' && (
-                <div className="space-y-5">
-                  <p className="font-sans text-sm text-charcoal/60">
-                    Draw your signature below, or type your full legal name to serve as an electronic attestation.
-                  </p>
-
-                  <SignatureCanvas onSave={setSigDataUrl} />
-
-                  <div>
-                    <FieldLabel>Or type your full legal name</FieldLabel>
-                    <Input
-                      type="text"
-                      value={sigTyped}
-                      onChange={(e) => setSigTyped(e.target.value)}
-                      placeholder={dlName || 'Full legal name'}
-                    />
-                    <p className="font-sans text-xs text-charcoal/40 mt-1">
-                      Typing your name here constitutes a legal electronic signature.
-                    </p>
-                  </div>
-
-                  <p className="font-sans text-xs text-charcoal/45 border-t border-charcoal/10 pt-4">
-                    By submitting, you agree that your electronic signature is legally binding under the Electronic Signatures in Global and National Commerce Act (ESIGN). Your IP address and timestamp will be recorded.
-                  </p>
-
-                  <div className="flex gap-3 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setCurrentStep('agreement')}
                       className="flex-1 rounded-full border border-charcoal/20 px-4 py-2.5 font-display text-xs font-bold uppercase tracking-widest text-charcoal/60 hover:text-charcoal hover:border-charcoal/35 transition focus-visible:outline-none"
                     >
                       Back
@@ -965,6 +1068,8 @@ export default function BookingSuccessClient({
                     </button>
                   </div>
                 </div>
+              )}
+                </>
               )}
             </motion.div>
           )}

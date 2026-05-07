@@ -7,6 +7,7 @@ import type {
   CalendarReservation,
   ExternalFeed,
   BlockRow,
+  ExportUrlFetchStatus,
 } from './page'
 import HostCalendarSidebar, { type TripStatusFilter } from '@/components/host-calendar/HostCalendarSidebar'
 import HostScheduleGrid from '@/components/host-calendar/HostScheduleGrid'
@@ -19,8 +20,6 @@ type Props = {
   initialBlocks: BlockRow[]
   initialReservations: CalendarReservation[]
   initialFeeds: ExternalFeed[]
-  exportToken: string | null
-  siteUrl: string
 }
 
 export default function HostCalendarClient({
@@ -29,8 +28,6 @@ export default function HostCalendarClient({
   initialBlocks,
   initialReservations,
   initialFeeds,
-  exportToken,
-  siteUrl,
 }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(initialListingId)
   const [blocks, setBlocks] = useState<BlockRow[]>(initialBlocks)
@@ -48,12 +45,44 @@ export default function HostCalendarClient({
     currently_hosting: true,
     completed: false,
   })
+  const [exportSubscribeUrl, setExportSubscribeUrl] = useState<string | null>(null)
+  const [exportUrlStatus, setExportUrlStatus] = useState<ExportUrlFetchStatus>('loading')
 
   const selectedListing = listings.find((l) => l.id === selectedId) ?? null
 
-  const exportUrl = selectedId && exportToken
-    ? `${siteUrl}/api/host/calendar/export/${selectedId}?token=${exportToken}`
-    : null
+  useEffect(() => {
+    if (!selectedId) {
+      setExportSubscribeUrl(null)
+      setExportUrlStatus('unavailable')
+      return
+    }
+    let cancelled = false
+    setExportUrlStatus('loading')
+    setExportSubscribeUrl(null)
+    fetch(`/api/host/calendar/export-url?listing_id=${encodeURIComponent(selectedId)}`, {
+      credentials: 'same-origin',
+    })
+      .then(async (res) => {
+        const json = (await res.json().catch(() => ({}))) as { url?: string }
+        if (cancelled) return
+        if (res.ok && typeof json.url === 'string' && json.url.length > 0) {
+          setExportSubscribeUrl(json.url)
+          setExportUrlStatus('ready')
+        } else {
+          setExportSubscribeUrl(null)
+          setExportUrlStatus('unavailable')
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setExportSubscribeUrl(null)
+          setExportUrlStatus('unavailable')
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [selectedId])
 
   const loadListingData = useCallback(async (listingId: string) => {
     setLoading(true)
@@ -61,7 +90,7 @@ export default function HostCalendarClient({
     const [blocksRes, resRes, feedsRes] = await Promise.all([
       supabase
         .from('availability_blocks')
-        .select('start_date, end_date, block_type')
+        .select('start_date, end_date, block_type, external_calendar_id')
         .eq('listing_id', listingId)
         .order('start_date', { ascending: true }),
       supabase
@@ -139,7 +168,8 @@ export default function HostCalendarClient({
             onFiltersChange={setFilters}
             feeds={feeds}
             onFeedsChange={setFeeds}
-            exportUrl={exportUrl}
+            exportUrl={exportSubscribeUrl}
+            exportUrlStatus={exportUrlStatus}
             onOpenAvailability={openAvailabilitySidebar}
           />
 
@@ -161,6 +191,7 @@ export default function HostCalendarClient({
               <HostScheduleGrid
                 blocks={blocks}
                 reservations={reservations}
+                feeds={feeds}
                 filters={filters}
                 pricePerNight={selectedListing.price_per_night_cents}
                 onReservationClick={setSelectedReservationId}

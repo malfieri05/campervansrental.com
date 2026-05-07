@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { CalendarRange, User, ArrowUpRight } from 'lucide-react'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
-import BookingsStatusTabs from './BookingsStatusTabs'
+import BookingsStatusTabs, { type HostBookingCounts } from './BookingsStatusTabs'
+import HostBookingRespondButtons from '@/components/host/bookings/HostBookingRespondButtons'
 
 type StatusParam = 'pending' | 'confirmed' | 'completed' | 'cancelled'
 
@@ -53,6 +54,20 @@ function statusBadge(status: StatusParam) {
   return styles[status] ?? 'bg-neutral-100 text-neutral-500 border border-neutral-200'
 }
 
+/** Pending tab mixes DB rows — badge from reservation.status */
+function pendingRowBadge(dbStatus: string): { label: string; badgeClass: string } {
+  if (dbStatus === 'pending_host') {
+    return {
+      label: 'Awaiting your approval',
+      badgeClass: 'bg-amber-50 text-amber-800 border border-amber-300',
+    }
+  }
+  return {
+    label: 'Awaiting payment',
+    badgeClass: 'bg-slate-50 text-slate-600 border border-slate-200',
+  }
+}
+
 const VALID_STATUSES: StatusParam[] = ['pending', 'confirmed', 'completed', 'cancelled']
 
 export default async function HostBookingsPage({
@@ -78,7 +93,7 @@ export default async function HostBookingsPage({
   let endDateFilter: { lt?: string; gte?: string } | null = null
 
   if (activeStatus === 'pending') {
-    dbStatus = 'pending_payment'
+    dbStatus = 'pending_payment' // unused for query; pending tab uses .in()
   } else if (activeStatus === 'confirmed') {
     dbStatus = 'confirmed'
     endDateFilter = { gte: today }
@@ -97,9 +112,28 @@ export default async function HostBookingsPage({
 
   const ids = (listingIds ?? []).map((l) => l.id)
 
+  let counts: HostBookingCounts = { pending: 0, confirmed: 0, completed: 0, cancelled: 0 }
+
   let reservations: ReservationRow[] = []
 
   if (ids.length > 0) {
+    const counting = () =>
+      supabase.from('reservations').select('*', { count: 'exact', head: true }).in('listing_id', ids)
+
+    const [pRes, cfRes, compRes, canRes] = await Promise.all([
+      counting().in('status', ['pending_payment', 'pending_host']),
+      counting().eq('status', 'confirmed').gte('end_date', today),
+      counting().eq('status', 'confirmed').lt('end_date', today),
+      counting().eq('status', 'cancelled'),
+    ])
+
+    counts = {
+      pending: pRes.count ?? 0,
+      confirmed: cfRes.count ?? 0,
+      completed: compRes.count ?? 0,
+      cancelled: canRes.count ?? 0,
+    }
+
     let query = supabase
       .from('reservations')
       .select(
@@ -117,15 +151,20 @@ export default async function HostBookingsPage({
       `
       )
       .in('listing_id', ids)
-      .eq('status', dbStatus)
-      .order('start_date', { ascending: false })
 
-    if (endDateFilter?.gte) {
-      query = query.gte('end_date', endDateFilter.gte)
+    if (activeStatus === 'pending') {
+      query = query.in('status', ['pending_payment', 'pending_host'])
+    } else {
+      query = query.eq('status', dbStatus)
+      if (endDateFilter?.gte) {
+        query = query.gte('end_date', endDateFilter.gte)
+      }
+      if (endDateFilter?.lt) {
+        query = query.lt('end_date', endDateFilter.lt)
+      }
     }
-    if (endDateFilter?.lt) {
-      query = query.lt('end_date', endDateFilter.lt)
-    }
+
+    query = query.order('start_date', { ascending: false })
 
     const { data } = await query
     reservations = (data ?? []) as unknown as ReservationRow[]
@@ -137,7 +176,7 @@ export default async function HostBookingsPage({
         <h1 className="font-sans text-2xl font-bold tracking-tight text-neutral-900">Bookings</h1>
       </div>
 
-      <BookingsStatusTabs activeStatus={activeStatus} />
+      <BookingsStatusTabs activeStatus={activeStatus} counts={counts} />
 
       {/* Booking list */}
       {reservations.length === 0 ? (
@@ -157,6 +196,11 @@ export default async function HostBookingsPage({
               )
             )
 
+            const rowBadge =
+              activeStatus === 'pending'
+                ? pendingRowBadge(r.status)
+                : { label: statusLabel(activeStatus), badgeClass: statusBadge(activeStatus) }
+
             return (
               <li
                 key={r.id}
@@ -166,9 +210,9 @@ export default async function HostBookingsPage({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
                       <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge(activeStatus)}`}
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${rowBadge.badgeClass}`}
                       >
-                        {statusLabel(activeStatus)}
+                        {rowBadge.label}
                       </span>
                       {r.listing && (
                         <span className="text-sm font-semibold text-neutral-800 truncate">
@@ -224,6 +268,21 @@ export default async function HostBookingsPage({
                     </div>
                   )}
                 </div>
+                {(r.status === 'pending_host' || r.status === 'pending_payment') && (
+                  <div className="mt-4 border-t border-neutral-100 pt-4">
+                    {r.status === 'pending_payment' && (
+                      <p className="text-xs text-neutral-500 mb-3 leading-snug max-w-xl">
+                        <span className="font-medium text-neutral-700">Accept</span> is available once the guest&apos;s
+                        reservation fee shows as paid in Stripe (usually immediately after checkout). If they abandoned
+                        checkout, only &quot;waiting for payment&quot; applies — Decline frees the dates for other guests
+                        without a refund.
+                      </p>
+                    )}
+                    <div className="flex justify-end">
+                      <HostBookingRespondButtons reservationId={r.id} dbStatus={r.status} />
+                    </div>
+                  </div>
+                )}
               </li>
             )
           })}

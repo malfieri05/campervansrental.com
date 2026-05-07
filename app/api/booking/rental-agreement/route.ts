@@ -15,6 +15,7 @@ import { NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { AGREEMENT_VERSION } from '@/lib/rental-agreement-template'
+import { sendRentalAgreementCompletionPacketIfNeeded } from '@/lib/rental-agreement-completion-email'
 
 // ─── Shared auth helper ──────────────────────────────────────────────────────
 
@@ -54,6 +55,18 @@ export async function GET(request: Request) {
   const svc = createServiceRoleClient()
   if (!svc) return NextResponse.json({ error: 'Server misconfigured' }, { status: 503 })
 
+  const { data: rs } = await svc
+    .from('reservations')
+    .select('status')
+    .eq('id', auth.reservationId)
+    .maybeSingle()
+  if (rs?.status !== 'confirmed') {
+    return NextResponse.json(
+      { error: 'The host must confirm your booking before you can complete the rental agreement.' },
+      { status: 403 },
+    )
+  }
+
   const { data } = await svc
     .from('rental_agreement_submissions')
     .select('*')
@@ -84,7 +97,41 @@ export async function POST(request: Request) {
   const svc = createServiceRoleClient()
   if (!svc) return NextResponse.json({ error: 'Server misconfigured' }, { status: 503 })
 
+  const { data: rsPost } = await svc
+    .from('reservations')
+    .select('status')
+    .eq('id', auth.reservationId)
+    .maybeSingle()
+  if (rsPost?.status !== 'confirmed') {
+    return NextResponse.json(
+      { error: 'The host must confirm your booking before you can complete the rental agreement.' },
+      { status: 403 },
+    )
+  }
+
   const step = body.step as string | undefined
+
+  if (step === 'complete') {
+    const { data: priorComplete } = await svc
+      .from('rental_agreement_submissions')
+      .select('id, completed_at')
+      .eq('reservation_id', auth.reservationId)
+      .maybeSingle()
+    if (priorComplete?.completed_at) {
+      try {
+        await sendRentalAgreementCompletionPacketIfNeeded(svc, auth.reservationId)
+      } catch (e) {
+        console.error('[rental-agreement] completion packet email retry:', e)
+      }
+      return NextResponse.json({
+        ok: true,
+        id: priorComplete.id,
+        completed: true,
+        idempotent: true,
+      })
+    }
+  }
+
 
   // Build upsert payload based on which step is being saved
   type SubmissionRow = Record<string, unknown>
@@ -128,6 +175,14 @@ export async function POST(request: Request) {
   if (error) {
     console.error('[rental-agreement] upsert error:', error.message)
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  if (step === 'complete') {
+    try {
+      await sendRentalAgreementCompletionPacketIfNeeded(svc, auth.reservationId)
+    } catch (e) {
+      console.error('[rental-agreement] completion packet email:', e)
+    }
   }
 
   return NextResponse.json({ ok: true, id: data.id, completed: Boolean(data.completed_at) })

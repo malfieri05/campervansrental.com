@@ -62,13 +62,24 @@ export async function POST(request: Request) {
   const auth = await authorizeSession(sessionId)
   if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status })
 
+  const svc = createServiceRoleClient()
+  if (!svc) return NextResponse.json({ error: 'Server misconfigured' }, { status: 503 })
+  const { data: rsRow } = await svc
+    .from('reservations')
+    .select('status')
+    .eq('id', auth.reservationId)
+    .maybeSingle()
+  if (rsRow?.status !== 'confirmed') {
+    return NextResponse.json(
+      { error: 'The host must confirm your booking before you can upload documents.' },
+      { status: 403 },
+    )
+  }
+
   const ext = file.type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'jpg'
   const path = `${auth.reservationId}/${fileType}.${ext}`
 
   const buffer = Buffer.from(await file.arrayBuffer())
-
-  const svc = createServiceRoleClient()
-  if (!svc) return NextResponse.json({ error: 'Server misconfigured' }, { status: 503 })
 
   const { error } = await svc.storage
     .from(BUCKET)
