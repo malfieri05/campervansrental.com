@@ -204,7 +204,7 @@ export default function BookingWizard({
   return (
     <div className="min-h-screen bg-cream-100">
       {/* Page Header */}
-      <div className="bg-forest-900 py-12 px-6">
+      <div className="bg-forest-900 py-8 sm:py-12 px-5 sm:px-6">
         <div className="max-w-4xl mx-auto">
           <h1 className="font-serif text-cream-50 font-bold text-3xl md:text-4xl mb-2">
             Reserve Your Van
@@ -270,11 +270,11 @@ export default function BookingWizard({
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-6 py-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Step 1: Search */}
         {currentStep === 1 && (
-          <div className="bg-cream-50 rounded-sm border border-cream-300/60 p-8 shadow-luxury-sm">
-            <h2 className="font-serif text-2xl font-semibold text-charcoal mb-8">
+          <div className="bg-cream-50 rounded-sm border border-cream-300/60 p-5 sm:p-8 shadow-luxury-sm">
+            <h2 className="font-serif text-2xl font-semibold text-charcoal mb-6 sm:mb-8">
               Where and When?
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -370,8 +370,8 @@ export default function BookingWizard({
 
         {/* Step 3: Contact Details */}
         {currentStep === 3 && (
-          <div className="bg-cream-50 rounded-sm border border-cream-300/60 p-8 shadow-luxury-sm">
-            <h2 className="font-serif text-2xl font-semibold text-charcoal mb-8">
+          <div className="bg-cream-50 rounded-sm border border-cream-300/60 p-5 sm:p-8 shadow-luxury-sm">
+            <h2 className="font-serif text-2xl font-semibold text-charcoal mb-6 sm:mb-8">
               Your Details
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

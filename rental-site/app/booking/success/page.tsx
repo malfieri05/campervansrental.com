@@ -29,10 +29,16 @@ type HostEmbed = {
 export default async function BookingSuccessPage({
   searchParams,
 }: {
-  searchParams: { session_id?: string }
+  searchParams: { session_id?: string; openAgreement?: string }
 }) {
   const sessionId = searchParams.session_id
   if (!sessionId) redirect('/booking')
+
+  const openAgreementParam = searchParams.openAgreement
+  const initialWorkspaceOpen =
+    openAgreementParam === '1' ||
+    openAgreementParam === 'true' ||
+    openAgreementParam === 'yes'
 
   const stripe = getStripe()
   let paid = false
@@ -147,6 +153,7 @@ export default async function BookingSuccessPage({
       vehicleModel={vehicleModel}
       vin={vin}
       licensePlate={licensePlate}
+      initialWorkspaceOpen={initialWorkspaceOpen}
     />
   )
 }

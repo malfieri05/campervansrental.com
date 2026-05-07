@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { MapPin, Users, Ruler, Star, CheckCircle, FileText } from 'lucide-react'
 import type { BlockRange } from '@/lib/availability'
+import { resolveListingDateClick } from '@/lib/listing-date-selection'
 import type { Van } from '@/types'
 import { getCategoryLabel, formatVanLengthFt } from '@/lib/data'
 import ListingReservePanel from './ListingReservePanel'
@@ -15,13 +16,6 @@ interface Props {
   smoking: boolean
 }
 
-function dayKey(d: Date) {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-
 export default function ListingDetailBody({ van, blocks, pets, smoking }: Props) {
   const [checkIn, setCheckIn] = useState<string | null>(null)
   const [checkOut, setCheckOut] = useState<string | null>(null)
@@ -32,17 +26,16 @@ export default function ListingDetailBody({ van, blocks, pets, smoking }: Props)
   }, [van.id])
 
   const handleDateClick = (key: string) => {
-    if (!checkIn || (checkIn && checkOut)) {
-      setCheckIn(key)
-      setCheckOut(null)
-      return
-    }
-    if (key <= checkIn) {
-      setCheckIn(key)
-      setCheckOut(null)
-    } else {
-      setCheckOut(key)
-    }
+    const next = resolveListingDateClick({
+      key,
+      checkIn,
+      checkOut,
+      blocks,
+      minNights: van.minNights ?? 1,
+    })
+    if (!next) return
+    setCheckIn(next.checkIn)
+    setCheckOut(next.checkOut)
   }
 
   const clearDates = () => {

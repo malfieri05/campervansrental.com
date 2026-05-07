@@ -28,7 +28,8 @@ export default function BookingsStatusTabs({
 }) {
   return (
     <LayoutGroup id="host-bookings-status">
-      <div className="mb-6 flex gap-1 rounded-xl border border-neutral-200 bg-white p-1 shadow-sm w-fit">
+      <div className="mb-6 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-px">
+      <div className="flex gap-1 rounded-xl border border-neutral-200 bg-white p-1 shadow-sm w-fit min-w-max">
         {STATUS_TABS.map(({ label, status }) => {
           const active = activeStatus === status
           const n = counts[status]
@@ -58,6 +59,7 @@ export default function BookingsStatusTabs({
             </Link>
           )
         })}
+      </div>
       </div>
     </LayoutGroup>
   )

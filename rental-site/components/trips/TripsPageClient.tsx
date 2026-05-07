@@ -495,7 +495,7 @@ function TripCard({
                     <span className="font-medium text-emerald-700">Completed</span>
                   ) : trip.stripe_checkout_session_id ? (
                     <Link
-                      href={`/booking/success?session_id=${encodeURIComponent(trip.stripe_checkout_session_id)}`}
+                      href={`/booking/success?session_id=${encodeURIComponent(trip.stripe_checkout_session_id)}&openAgreement=1`}
                       aria-label="Complete rental agreement and paperwork for this trip"
                       className="font-medium text-red-600 underline underline-offset-2 decoration-red-600 hover:text-red-700 hover:decoration-red-700 transition-colors"
                     >
