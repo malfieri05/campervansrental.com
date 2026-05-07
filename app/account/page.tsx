@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { isStripeHostConnectOffered } from '@/lib/env'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
@@ -6,21 +7,31 @@ import type { ProfileFields } from './actions'
 
 export const metadata = { title: 'Account – CampervansRental' }
 
+function AccountFallback() {
+  return (
+    <div className="min-h-[40vh] flex items-center justify-center px-4 font-sans text-neutral-500">
+      Loading…
+    </div>
+  )
+}
+
 export default async function AccountPage() {
   const supabase = await createServerSupabaseClient()
 
   if (!supabase) {
     // Supabase not configured in this environment — show empty shell
     return (
-      <AccountPageClient
-        initialProfile={null}
-        userId=""
-        supabaseUrl=""
-        isHost={false}
-        stripeCustomerId={null}
-        stripeConnectAccountId={null}
-        stripeHostConnectOffered={isStripeHostConnectOffered()}
-      />
+      <Suspense fallback={<AccountFallback />}>
+        <AccountPageClient
+          initialProfile={null}
+          userId=""
+          supabaseUrl=""
+          isHost={false}
+          stripeCustomerId={null}
+          stripeConnectAccountId={null}
+          stripeHostConnectOffered={isStripeHostConnectOffered()}
+        />
+      </Suspense>
     )
   }
 
@@ -37,14 +48,16 @@ export default async function AccountPage() {
     .single()
 
   return (
-    <AccountPageClient
-      initialProfile={(data as ProfileFields) ?? null}
-      userId={user.id}
-      supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}
-      isHost={Boolean(data?.is_host)}
-      stripeCustomerId={data?.stripe_customer_id ?? null}
-      stripeConnectAccountId={data?.stripe_connect_account_id ?? null}
-      stripeHostConnectOffered={isStripeHostConnectOffered()}
-    />
+    <Suspense fallback={<AccountFallback />}>
+      <AccountPageClient
+        initialProfile={(data as ProfileFields) ?? null}
+        userId={user.id}
+        supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}
+        isHost={Boolean(data?.is_host)}
+        stripeCustomerId={data?.stripe_customer_id ?? null}
+        stripeConnectAccountId={data?.stripe_connect_account_id ?? null}
+        stripeHostConnectOffered={isStripeHostConnectOffered()}
+      />
+    </Suspense>
   )
 }
