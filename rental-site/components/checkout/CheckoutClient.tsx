@@ -13,7 +13,7 @@ import {
   tripTotalCentsExcludingSecurityDeposit,
   RESERVATION_FEE_REFUND_COPY,
 } from '@/lib/booking-pricing'
-import { isSupabaseConfigured } from '@/lib/env'
+import { getSupabaseUnavailableReason, isSupabaseConfigured } from '@/lib/env'
 import type { Van } from '@/types'
 import ReservationFeeLabelWithTooltip from '@/components/booking/ReservationFeeLabelWithTooltip'
 
@@ -275,7 +275,10 @@ export default function CheckoutClient({ van, listingId, startDate, endDate, gue
     setError(null)
     setAuthSuccessMessage(null)
     if (!isSupabaseConfigured()) {
-      setError('Auth requires Supabase to be configured.')
+      setError(
+        getSupabaseUnavailableReason() ??
+          'Sign-in requires Supabase. Configure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY, then redeploy.'
+      )
       return
     }
     setBusy(true)

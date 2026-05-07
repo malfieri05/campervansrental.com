@@ -23,6 +23,35 @@ export function isSupabaseConfigured(): boolean {
   return getSupabaseEnvSyncIssues().length === 0
 }
 
+/**
+ * Human-readable reason auth/data features are disabled (for login/checkout UX).
+ * Next.js inlines NEXT_PUBLIC_* at build time — changing env on Vercel requires a redeploy.
+ */
+export function getSupabaseUnavailableReason(): string | null {
+  if (isSupabaseConfigured()) return null
+
+  if (isSupabaseExplicitlyOffline()) {
+    return (
+      'This build has NEXT_PUBLIC_SUPABASE_OFFLINE enabled. In Vercel → Project → Settings → Environment Variables, set NEXT_PUBLIC_SUPABASE_OFFLINE to false or delete it for Production, then redeploy.'
+    )
+  }
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+  if (!url || !key) {
+    return (
+      'Supabase URL and anon key are missing from this deployment. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY for the Production environment in Vercel, save, then redeploy (Next.js embeds these at build time).'
+    )
+  }
+
+  const issues = getSupabaseEnvSyncIssues()
+  if (issues.length > 0) {
+    return `${issues.join(' ')} Update the variables in Vercel and redeploy.`
+  }
+
+  return 'Supabase is not available in this build.'
+}
+
 export function isStripeConfigured(): boolean {
   return Boolean(process.env.STRIPE_SECRET_KEY)
 }
