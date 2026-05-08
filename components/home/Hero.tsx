@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { ChevronDown, MapPin, Calendar, Users, Search } from 'lucide-react'
 import Image from 'next/image'
@@ -32,14 +33,36 @@ const locationOptions = [
 const HERO_HEADLINE_BASE = 'clamp(1.85rem, 4.5vw, 3.35rem)'
 const HERO_HEADLINE_ACCENT = 'clamp(2.035rem, 4.95vw, 3.685rem)'
 
+function formatDateLabel(iso: string): string {
+  if (!iso) return ''
+  try {
+    const [y, m, d] = iso.split('-').map(Number)
+    return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  } catch {
+    return iso
+  }
+}
+
 export default function Hero() {
+  const router = useRouter()
   const [mounted, setMounted] = useState(false)
   const [location, setLocation] = useState('')
+  const [checkIn, setCheckIn] = useState('')
+  const [checkOut, setCheckOut] = useState('')
   const [guests, setGuests] = useState(2)
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  const handleSearch = () => {
+    const params = new URLSearchParams()
+    if (location) params.set('listing', location)
+    if (checkIn) params.set('checkIn', checkIn)
+    if (checkOut) params.set('checkOut', checkOut)
+    params.set('guests', String(guests))
+    router.push(`/booking?${params.toString()}`)
+  }
 
   if (!mounted) return null
 
@@ -109,16 +132,17 @@ export default function Hero() {
         initial="hidden"
         animate="visible"
         custom={1.0}
-        className="absolute bottom-0 left-0 right-0 z-20 px-6 pb-0"
+        className="absolute bottom-0 left-0 right-0 z-20 px-4 sm:px-6 pb-0"
       >
         <div className="max-w-5xl mx-auto">
           <div className="glass-card rounded-t-2xl shadow-luxury border border-cream-200/20 overflow-hidden">
-            <div className="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-cream-300/20">
-              {/* Pickup Location */}
-              <div className="flex items-center gap-3 px-6 py-5">
-                <MapPin className="w-5 h-5 text-gold-500 flex-shrink-0" />
+            {/* Mobile: 2-col compact grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-cream-300/20">
+              {/* Pickup Location — spans full width on mobile */}
+              <div className="col-span-2 md:col-span-1 flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-5 border-b border-cream-300/20 md:border-b-0">
+                <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gold-500 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <label className="font-display text-[0.65rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-1">
+                  <label className="font-display text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-0.5">
                     Pickup Location
                   </label>
                   <select
@@ -128,47 +152,56 @@ export default function Hero() {
                   >
                     <option value="">Select a location</option>
                     {locationOptions.map((loc) => (
-                      <option key={loc} value={loc}>
-                        {loc}
-                      </option>
+                      <option key={loc} value={loc}>{loc}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
               {/* Pick Up Date */}
-              <div className="flex items-center gap-3 px-6 py-5">
-                <Calendar className="w-5 h-5 text-gold-500 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <label className="font-display text-[0.65rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-1">
+              <div className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-5 border-b border-cream-300/20 md:border-b-0 md:border-l border-cream-300/20">
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gold-500 flex-shrink-0" />
+                <div className="flex-1 min-w-0 relative">
+                  <label className="font-display text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-0.5">
                     Pick Up
                   </label>
+                  {/* Visible label for iOS (date input is transparent, layered on top) */}
+                  <span className="font-sans text-sm text-charcoal font-medium pointer-events-none block">
+                    {checkIn ? formatDateLabel(checkIn) : <span className="text-charcoal/40">Add date</span>}
+                  </span>
                   <input
                     type="date"
-                    className="w-full bg-transparent font-sans text-sm text-charcoal font-medium focus:outline-none cursor-pointer"
+                    value={checkIn}
+                    onChange={(e) => setCheckIn(e.target.value)}
+                    className="absolute inset-0 w-full opacity-0 cursor-pointer"
                   />
                 </div>
               </div>
 
               {/* Return Date */}
-              <div className="flex items-center gap-3 px-6 py-5">
-                <Calendar className="w-5 h-5 text-gold-500 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <label className="font-display text-[0.65rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-1">
+              <div className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-5 border-l border-cream-300/20">
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gold-500 flex-shrink-0" />
+                <div className="flex-1 min-w-0 relative">
+                  <label className="font-display text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-0.5">
                     Return
                   </label>
+                  <span className="font-sans text-sm text-charcoal font-medium pointer-events-none block">
+                    {checkOut ? formatDateLabel(checkOut) : <span className="text-charcoal/40">Add date</span>}
+                  </span>
                   <input
                     type="date"
-                    className="w-full bg-transparent font-sans text-sm text-charcoal font-medium focus:outline-none cursor-pointer"
+                    value={checkOut}
+                    onChange={(e) => setCheckOut(e.target.value)}
+                    className="absolute inset-0 w-full opacity-0 cursor-pointer"
                   />
                 </div>
               </div>
 
               {/* Guests + Search */}
-              <div className="flex items-center gap-3 px-6 py-5">
-                <Users className="w-5 h-5 text-gold-500 flex-shrink-0" />
+              <div className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-5 border-l border-cream-300/20">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-gold-500 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <label className="font-display text-[0.65rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-1">
+                  <label className="font-display text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-0.5">
                     Guests
                   </label>
                   <select
@@ -177,14 +210,16 @@ export default function Hero() {
                     className="w-full bg-transparent font-sans text-sm text-charcoal font-medium focus:outline-none cursor-pointer appearance-none"
                   >
                     {[1, 2, 3, 4].map((n) => (
-                      <option key={n} value={n}>
-                        {n} {n === 1 ? 'Guest' : 'Guests'}
-                      </option>
+                      <option key={n} value={n}>{n} {n === 1 ? 'Guest' : 'Guests'}</option>
                     ))}
                   </select>
                 </div>
-                <button className="ml-2 w-11 h-11 bg-gold-400 hover:bg-gold-300 rounded-sm flex items-center justify-center transition-colors duration-200 flex-shrink-0 shadow-gold">
-                  <Search className="w-5 h-5 text-forest-950" strokeWidth={2} />
+                <button
+                  onClick={handleSearch}
+                  aria-label="Search"
+                  className="ml-1 w-10 h-10 sm:w-11 sm:h-11 bg-gold-400 hover:bg-gold-300 rounded-sm flex items-center justify-center transition-colors duration-200 flex-shrink-0 shadow-gold"
+                >
+                  <Search className="w-4 h-4 sm:w-5 sm:h-5 text-forest-950" strokeWidth={2} />
                 </button>
               </div>
             </div>

@@ -67,6 +67,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   themeColor: '#0a2d21',
+  viewportFit: 'cover',
 }
 
 export default async function RootLayout({
@@ -89,7 +90,7 @@ export default async function RootLayout({
           <DevSupabaseConfigBanner />
         </Suspense>
         <Navbar />
-        <main className="pt-20">{children}</main>
+        <main className="pt-20 pb-[env(safe-area-inset-bottom,0px)]">{children}</main>
         <Footer />
       </body>
     </html>

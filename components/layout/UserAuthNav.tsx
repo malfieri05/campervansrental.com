@@ -41,7 +41,7 @@ function buildIdentity(displayName: string | null | undefined, email: string, is
   }
 }
 
-export default function UserAuthNav({ mobile = false }: { mobile?: boolean }) {
+export default function UserAuthNav({ mobile = false, onMobileNavigate }: { mobile?: boolean; onMobileNavigate?: () => void }) {
   const [authState, setAuthState] = useState<AuthState>({ status: 'loading' })
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -116,6 +116,7 @@ export default function UserAuthNav({ mobile = false }: { mobile?: boolean }) {
       >
         <Link
           href="/auth/login"
+          onClick={mobile ? onMobileNavigate : undefined}
           className={[
             'font-display text-xs font-semibold uppercase tracking-[0.12em] transition-colors',
             pathname === '/auth/login'
@@ -125,11 +126,10 @@ export default function UserAuthNav({ mobile = false }: { mobile?: boolean }) {
         >
           Log in
         </Link>
-        <span className="text-cream-200/50 text-xs" aria-hidden>
-          |
-        </span>
+        {!mobile && <span className="text-cream-200/50 text-xs" aria-hidden>|</span>}
         <Link
           href="/auth/signup"
+          onClick={mobile ? onMobileNavigate : undefined}
           className={[
             'font-display text-xs font-semibold uppercase tracking-[0.12em] transition-colors',
             pathname === '/auth/signup'
@@ -163,11 +163,12 @@ export default function UserAuthNav({ mobile = false }: { mobile?: boolean }) {
         </div>
         <Link
           href="/account"
+          onClick={onMobileNavigate}
           className="font-display text-xs font-semibold uppercase tracking-[0.12em] text-cream-200/90 hover:text-gold-300 transition-colors"
         >
           Account
         </Link>
-        <Button variant="ghost" size="sm" onClick={() => void signOut()}>
+        <Button variant="ghost" size="sm" onClick={() => { onMobileNavigate?.(); void signOut() }}>
           Log out
         </Button>
       </div>

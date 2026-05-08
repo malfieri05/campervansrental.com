@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutGroup, motion } from 'framer-motion'
@@ -94,6 +94,17 @@ export default function Navbar() {
 
   /** Logged-in travelers see Browse next to the profile; logged-out users do not. */
   const showBrowse = loggedIn === true && isHost === false
+
+  const closeMobile = useCallback(() => setMobileOpen(false), [])
+
+  // Close drawer on any route change
+  useEffect(() => { closeMobile() }, [pathname, closeMobile])
+
+  // Scroll-lock body while drawer is open
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [mobileOpen])
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60)
@@ -195,31 +206,35 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Drawer */}
-        <div
-          className={[
-            'lg:hidden overflow-hidden transition-all duration-500 ease-in-out',
-            mobileOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0',
-          ].join(' ')}
-        >
-          <div className="bg-forest-950/98 border-t border-forest-800/50 backdrop-blur-md px-6 py-8">
-            <div className="flex flex-col gap-6">
+      </nav>
+
+      {/* Mobile full-screen overlay — sits below the nav bar (top-20), above everything else */}
+      {mobileOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 top-20 z-40 bg-black/50 lg:hidden"
+            aria-hidden
+            onClick={closeMobile}
+          />
+          {/* Panel */}
+          <div className="fixed inset-x-0 top-20 z-50 lg:hidden bg-forest-950 border-t border-forest-800/50 overflow-y-auto max-h-[calc(100dvh-5rem)]">
+            <div className="px-6 py-8 flex flex-col gap-6">
               {mobileNavLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  onClick={() => setMobileOpen(false)}
+                  onClick={closeMobile}
                   className={mobileLinkClass(isActiveLink(link.href))}
                 >
                   {link.label}
                 </Link>
               ))}
-
-              <UserAuthNav mobile />
+              <UserAuthNav mobile onMobileNavigate={closeMobile} />
             </div>
           </div>
-        </div>
-      </nav>
+        </>
+      )}
     </>
   )
 }

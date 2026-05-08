@@ -27,7 +27,7 @@ export default async function FeaturedVans() {
         </div>
 
         {/* View Full Fleet CTA */}
-        <div className="text-center">
+        <div className="text-center pb-4 sm:pb-0">
           <Button href="/fleet" variant="dark" size="lg">
             View Full Fleet
           </Button>

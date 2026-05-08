@@ -351,7 +351,7 @@ export default function CheckoutClient({ van, listingId, startDate, endDate, gue
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
 
           {/* ── Left: auth + form ───────────────────────── */}
-          <div className="space-y-6">
+          <div className="space-y-6 order-2 lg:order-1">
 
             {/* Auth section */}
             {hasSession === false && (
@@ -520,8 +520,8 @@ export default function CheckoutClient({ van, listingId, startDate, endDate, gue
             </button>
           </div>
 
-          {/* ── Right: sticky trip summary ───────────────── */}
-          <div className="lg:sticky lg:top-24">
+          {/* ── Right: trip summary (shows first on mobile) ── */}
+          <div className="lg:sticky lg:top-24 order-1 lg:order-2">
             <div className="bg-white border border-neutral-200 rounded-2xl shadow-luxury-sm overflow-visible">
               {/* Image clips to top corners; card stays overflow-visible so tooltips aren’t clipped */}
               {van && (

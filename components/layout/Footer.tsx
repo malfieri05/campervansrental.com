@@ -13,19 +13,20 @@ export default function Footer() {
         {/* Faint divider above the sole footer row */}
         <div className="h-px bg-gradient-to-r from-transparent via-forest-700/80 to-transparent" />
 
-        <div className="grid grid-cols-1 gap-6 py-8 pb-4 sm:grid-cols-3 sm:items-center sm:gap-8">
-          <p className="text-xs font-sans text-cream-200/40 text-left">
+        {/* Mobile: single centered column. sm+: three-column row */}
+        <div className="py-8 pb-4 flex flex-col items-center gap-4 sm:grid sm:grid-cols-3 sm:items-center sm:gap-8">
+          <p className="text-xs font-sans text-cream-200/40 text-center sm:text-left order-3 sm:order-1">
             © {year} Camper Van Rentals. All rights reserved.
           </p>
 
-          <p className="font-serif text-sm italic text-cream-50/90 sm:text-base text-center leading-snug">
+          <p className="font-serif text-sm italic text-cream-50/90 sm:text-base text-center leading-snug order-1 sm:order-2">
             Made for the modern explorer
           </p>
 
-          <div className="flex justify-end">
+          <div className="flex justify-center sm:justify-end order-2 sm:order-3">
             <Link
               href="/"
-              className="group inline-flex w-fit text-right transition-opacity group-hover:opacity-90"
+              className="group inline-flex w-fit transition-opacity group-hover:opacity-90"
             >
               <SiteLogo textOnly />
             </Link>
