@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "if [ -d rental-site ]; then cd rental-site && npm install; else npm install; fi",
+  "buildCommand": "if [ -d rental-site ]; then cd rental-site && npm run build; else npm run build; fi",
+  "crons": [
+    {
+      "path": "/api/cron/sync-external-calendars",
+      "schedule": "0 5 * * *"
+    }
+  ]
+}
