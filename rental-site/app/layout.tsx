@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     icon: '/favicon.png',
     apple: '/favicon.png',
   },
-  title: 'Camper Van Rentals | Luxury Outdoor Adventures',
+  title: 'Camper Van Rentals | Experience Van Life',
   description:
     'Premium camper van rentals for the discerning traveler. Experience the wilderness in uncompromising luxury with our hand-curated fleet of fully-equipped vans.',
   keywords: [
@@ -29,26 +29,22 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: 'https://campervansrental.com',
     siteName: 'Camper Van Rentals',
-    title: 'Camper Van Rentals | Luxury Outdoor Adventures',
+    title: 'Camper Van Rentals | Experience Van Life',
     description:
       'Premium camper van rentals for the discerning traveler. Experience the wilderness in uncompromising luxury.',
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=1200',
-        width: 1200,
-        height: 630,
-        alt: 'Luxury camper van in stunning natural landscape',
+        url: 'https://campervansrental.com/rearvan.png',
+        alt: 'Camper van experience',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Camper Van Rentals | Luxury Outdoor Adventures',
+    title: 'Camper Van Rentals | Experience Van Life',
     description:
       'Premium camper van rentals for the discerning traveler.',
-    images: [
-      'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=1200',
-    ],
+    images: ['https://campervansrental.com/rearvan.png'],
   },
   robots: {
     index: true,

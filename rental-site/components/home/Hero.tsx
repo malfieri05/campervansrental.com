@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { ChevronDown, MapPin, Calendar, Users, Search } from 'lucide-react'
 import Image from 'next/image'
 import Button from '@/components/ui/Button'
+import HeroDatePopover from '@/components/home/HeroDatePopover'
 
 const fadeUpVariant = {
   hidden: { opacity: 0, y: 30 },
@@ -50,6 +51,9 @@ export default function Hero() {
   const [checkIn, setCheckIn] = useState('')
   const [checkOut, setCheckOut] = useState('')
   const [guests, setGuests] = useState(2)
+  const [datePopover, setDatePopover] = useState<'checkIn' | 'checkOut' | null>(null)
+  const pickUpDateCellRef = useRef<HTMLDivElement>(null)
+  const returnDateCellRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -79,63 +83,65 @@ export default function Hero() {
           sizes="100vw"
         />
         {/* Multi-layer gradient overlays */}
-        <div className="absolute inset-0 bg-gradient-to-b from-forest-950/80 via-forest-950/40 to-forest-950/95" />
-        <div className="absolute inset-0 bg-gradient-to-r from-forest-950/50 via-transparent to-forest-950/30" />
+        <div className="absolute inset-0 bg-gradient-to-b from-forest-950/50 via-forest-950/30 to-forest-950/60" />
+        <div className="absolute inset-0 bg-gradient-to-r from-forest-950/35 via-transparent to-forest-950/25" />
       </div>
 
-      {/* Main content */}
+      {/* Main content — halfway between centered and prior -15vh lift */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 pt-32 pb-48">
-        <motion.h1
-          variants={fadeUpVariant}
-          initial="hidden"
-          animate="visible"
-          custom={0.35}
-          className="flex flex-col items-center gap-1 sm:gap-1.5 mb-12 max-w-5xl text-center"
-        >
-          <span
-            className="font-serif font-bold text-cream-50 text-shadow-luxury leading-tight block"
-            style={{ fontSize: HERO_HEADLINE_BASE }}
+        <div className="flex w-full max-w-5xl flex-col items-center -translate-y-[7.5vh]">
+          <motion.h1
+            variants={fadeUpVariant}
+            initial="hidden"
+            animate="visible"
+            custom={0.35}
+            className="flex flex-col items-center gap-1 sm:gap-1.5 mb-12 max-w-5xl text-center"
           >
-            Your
-          </span>
-          <span
-            className="font-serif font-bold italic text-gold-400 text-shadow-luxury leading-tight block"
-            style={{ fontSize: HERO_HEADLINE_ACCENT }}
-          >
-            Camper Van Adventure
-          </span>
-          <span
-            className="font-serif font-bold text-cream-50 text-shadow-luxury leading-tight block"
-            style={{ fontSize: HERO_HEADLINE_BASE }}
-          >
-            Awaits
-          </span>
-        </motion.h1>
+            <span
+              className="font-serif font-bold text-cream-50 text-shadow-luxury leading-tight block"
+              style={{ fontSize: HERO_HEADLINE_BASE }}
+            >
+              Your
+            </span>
+            <span
+              className="font-serif font-bold italic text-gold-400 text-shadow-luxury leading-tight block"
+              style={{ fontSize: HERO_HEADLINE_ACCENT }}
+            >
+              Camper Van Adventure
+            </span>
+            <span
+              className="font-serif font-bold text-cream-50 text-shadow-luxury leading-tight block"
+              style={{ fontSize: HERO_HEADLINE_BASE }}
+            >
+              Awaits
+            </span>
+          </motion.h1>
 
-        {/* CTA Buttons */}
-        <motion.div
-          variants={fadeUpVariant}
-          initial="hidden"
-          animate="visible"
-          custom={0.55}
-          className="flex justify-center"
-        >
-          <Button href="/fleet" variant="primary" size="lg">
-            Explore Our Fleet
-          </Button>
-        </motion.div>
+          {/* CTA Buttons */}
+          <motion.div
+            variants={fadeUpVariant}
+            initial="hidden"
+            animate="visible"
+            custom={0.55}
+            className="flex justify-center"
+          >
+            <Button href="/fleet" variant="primary" size="lg">
+              Explore Our Fleet
+            </Button>
+          </motion.div>
+        </div>
       </div>
 
-      {/* Floating Booking Bar */}
+      {/* Floating Booking Bar — inset from hero bottom, full rounded rect */}
       <motion.div
         variants={fadeUpVariant}
         initial="hidden"
         animate="visible"
         custom={1.0}
-        className="absolute bottom-0 left-0 right-0 z-20 px-4 sm:px-6 pb-0"
+        className="absolute bottom-5 left-0 right-0 z-20 px-4 sm:bottom-9 sm:px-6"
       >
         <div className="max-w-5xl mx-auto">
-          <div className="glass-card rounded-t-2xl shadow-luxury border border-cream-200/20 overflow-hidden">
+          <div className="glass-card rounded-2xl shadow-luxury ring-1 ring-black/10 overflow-hidden border border-cream-200/30">
             {/* Mobile: 2-col compact grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-cream-300/20">
               {/* Pickup Location — spans full width on mobile */}
@@ -158,43 +164,54 @@ export default function Hero() {
                 </div>
               </div>
 
-              {/* Pick Up Date */}
-              <div className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-5 border-b border-cream-300/20 md:border-b-0 md:border-l border-cream-300/20">
-                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gold-500 flex-shrink-0" />
-                <div className="flex-1 min-w-0 relative">
-                  <label className="font-display text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-0.5">
+              {/* Pick Up Date — full-cell tap opens native picker (Safari-safe via showPicker) */}
+              <div
+                ref={pickUpDateCellRef}
+                className="relative flex min-h-[4.25rem] items-center gap-3 border-b border-cream-300/20 px-4 py-3 sm:px-6 sm:py-5 md:border-b-0 md:border-l border-cream-300/20"
+              >
+                <Calendar className="relative z-0 h-4 w-4 shrink-0 text-gold-500 sm:h-5 sm:w-5 pointer-events-none" aria-hidden />
+                <div className="relative z-0 min-w-0 flex-1 pointer-events-none">
+                  <span className="font-display mb-0.5 block text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700">
                     Pick Up
-                  </label>
-                  {/* Visible label for iOS (date input is transparent, layered on top) */}
-                  <span className="font-sans text-sm text-charcoal font-medium pointer-events-none block">
+                  </span>
+                  <span className="font-sans block text-sm font-medium text-charcoal">
                     {checkIn ? formatDateLabel(checkIn) : <span className="text-charcoal/40">Add date</span>}
                   </span>
-                  <input
-                    type="date"
-                    value={checkIn}
-                    onChange={(e) => setCheckIn(e.target.value)}
-                    className="absolute inset-0 w-full opacity-0 cursor-pointer"
-                  />
                 </div>
+                <button
+                  type="button"
+                  className="absolute inset-0 z-10 cursor-pointer rounded-none bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gold-400/70"
+                  aria-label="Pick up date"
+                  onClick={() =>
+                    setDatePopover((prev) => (prev === 'checkIn' ? null : 'checkIn'))
+                  }
+                  aria-expanded={datePopover === 'checkIn'}
+                />
               </div>
 
               {/* Return Date */}
-              <div className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-5 border-l border-cream-300/20">
-                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gold-500 flex-shrink-0" />
-                <div className="flex-1 min-w-0 relative">
-                  <label className="font-display text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-0.5">
+              <div
+                ref={returnDateCellRef}
+                className="relative flex min-h-[4.25rem] items-center gap-3 border-l border-cream-300/20 px-4 py-3 sm:px-6 sm:py-5"
+              >
+                <Calendar className="relative z-0 h-4 w-4 shrink-0 text-gold-500 sm:h-5 sm:w-5 pointer-events-none" aria-hidden />
+                <div className="relative z-0 min-w-0 flex-1 pointer-events-none">
+                  <span className="font-display mb-0.5 block text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700">
                     Return
-                  </label>
-                  <span className="font-sans text-sm text-charcoal font-medium pointer-events-none block">
+                  </span>
+                  <span className="font-sans block text-sm font-medium text-charcoal">
                     {checkOut ? formatDateLabel(checkOut) : <span className="text-charcoal/40">Add date</span>}
                   </span>
-                  <input
-                    type="date"
-                    value={checkOut}
-                    onChange={(e) => setCheckOut(e.target.value)}
-                    className="absolute inset-0 w-full opacity-0 cursor-pointer"
-                  />
                 </div>
+                <button
+                  type="button"
+                  className="absolute inset-0 z-10 cursor-pointer rounded-none bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gold-400/70"
+                  aria-label="Return date"
+                  onClick={() =>
+                    setDatePopover((prev) => (prev === 'checkOut' ? null : 'checkOut'))
+                  }
+                  aria-expanded={datePopover === 'checkOut'}
+                />
               </div>
 
               {/* Guests + Search */}
@@ -227,12 +244,38 @@ export default function Hero() {
         </div>
       </motion.div>
 
+      {datePopover && (
+        <HeroDatePopover
+          open={!!datePopover}
+          field={datePopover}
+          value={datePopover === 'checkIn' ? checkIn : checkOut}
+          checkIn={checkIn}
+          onSelect={(iso) => {
+            if (datePopover === 'checkIn') {
+              setCheckIn(iso)
+              if (checkOut && checkOut <= iso) setCheckOut('')
+            } else setCheckOut(iso)
+            setDatePopover(null)
+          }}
+          onClear={() => {
+            if (datePopover === 'checkIn') {
+              setCheckIn('')
+              setCheckOut('')
+            } else setCheckOut('')
+            setDatePopover(null)
+          }}
+          onClose={() => setDatePopover(null)}
+          pickUpAnchorRef={pickUpDateCellRef}
+          returnAnchorRef={returnDateCellRef}
+        />
+      )}
+
       {/* Scroll indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.4, duration: 0.6 }}
-        className="absolute left-1/2 -translate-x-1/2 bottom-[calc(4rem+80px)] z-10"
+        className="absolute left-1/2 -translate-x-1/2 bottom-[calc(4rem+112px)] z-10"
       >
         <div className="flex flex-col items-center gap-2 text-cream-100/40">
           <span className="font-display text-[0.6rem] uppercase tracking-[0.2em]">
