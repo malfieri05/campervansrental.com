@@ -71,7 +71,7 @@ export default function Hero() {
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=1920"
+          src="/heroimage.png"
           alt="Luxury camper van in nature"
           fill
           priority
