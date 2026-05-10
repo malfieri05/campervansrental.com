@@ -61,7 +61,7 @@ export default function VanCard({ van }: VanCardProps) {
           src={src}
           alt={`${van.name} — photo ${safeIndex + 1} of ${n}`}
           fill
-          className="object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.04]"
+          className="object-cover"
           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
         />
 
