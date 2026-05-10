@@ -76,16 +76,11 @@ export default function HowItWorks() {
           </div>
 
           <h2
-            className="mb-5 max-w-3xl font-serif font-bold leading-tight text-charcoal"
+            className="max-w-3xl font-serif font-bold leading-tight text-charcoal"
             style={{ fontSize: 'clamp(1.85rem, 4vw, 2.85rem)' }}
           >
-            Big-platform polish—without the endless fee stack.
+            Big-platform polish—without the excess fees.
           </h2>
-
-          <p className="max-w-2xl font-sans text-lg leading-relaxed text-charcoal/60">
-            All of the structure and support you expect from a major rental marketplace, with pricing
-            that stays closer to the trip itself.
-          </p>
         </motion.div>
 
         {/* Narrative + image — wider image column; photo uses intrinsic aspect (no cover crop) */}
@@ -97,22 +92,22 @@ export default function HowItWorks() {
             animate={inView ? 'visible' : 'hidden'}
             className="order-2 max-w-xl lg:order-1 lg:max-w-none lg:pr-2"
           >
-            <p className="mb-6 font-sans text-base leading-relaxed text-charcoal/65 sm:text-[1.05rem]">
+            <div className="mb-6 rounded-xl border border-gold-400/25 bg-white/40 px-5 py-4 backdrop-blur-sm ring-1 ring-black/[0.03]">
+              <p className="font-display text-[0.65rem] font-bold uppercase tracking-[0.18em] text-forest-800">
+                What that means for you
+              </p>
+              <p className="mt-2 font-sans text-sm leading-relaxed text-charcoal/60">
+                All of the structure and support you get from a major rental marketplace, without a
+                greedy middleman.
+              </p>
+            </div>
+            <p className="font-sans text-base leading-relaxed text-charcoal/65 sm:text-[1.05rem]">
               This platform was built by camping enthusiasts and van owners who were tired of the
               ever-increasing fees alternative platforms forced onto renters and owners. We wanted a
               rental home where hosts keep meaningful control over what guests are charged—so we can
               deliver the same attentive, full-service experience travelers deserve at a lower total
               cost.
             </p>
-            <div className="rounded-xl border border-gold-400/25 bg-white/40 px-5 py-4 backdrop-blur-sm ring-1 ring-black/[0.03]">
-              <p className="font-display text-[0.65rem] font-bold uppercase tracking-[0.18em] text-forest-800">
-                What that means for you
-              </p>
-              <p className="mt-2 font-sans text-sm leading-relaxed text-charcoal/60">
-                Renters get booking clarity and roadside-ready vans. Hosts get tools they recognize—
-                without watching fees eat the margin on both sides of every reservation.
-              </p>
-            </div>
           </motion.div>
 
           <motion.div
