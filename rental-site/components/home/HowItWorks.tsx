@@ -3,28 +3,6 @@
 import Image from 'next/image'
 import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
-import { Layers, Gauge, Mountain } from 'lucide-react'
-
-const pillars = [
-  {
-    icon: Layers,
-    title: 'Full marketplace structure',
-    body:
-      'Calendars, bookings, and host tools patterned after what works on the biggest rental platforms—so nothing feels improvised.',
-  },
-  {
-    icon: Gauge,
-    title: 'Owners steer pricing',
-    body:
-      'Hosts set rates and fees with room to breathe. Less middleman markup means the same trip often costs travelers less out the door.',
-  },
-  {
-    icon: Mountain,
-    title: 'Built by people who camp',
-    body:
-      'Camping enthusiasts and van owners who got tired of rising platform fees—for renters and hosts alike. Fair search-to-return was the goal.',
-  },
-]
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -84,7 +62,7 @@ export default function HowItWorks() {
         </motion.div>
 
         {/* Narrative + image — wider image column; photo uses intrinsic aspect (no cover crop) */}
-        <div className="mb-16 grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:gap-10 xl:gap-14">
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:gap-10 xl:gap-14">
           <motion.div
             custom={0}
             variants={fadeUp}
@@ -132,29 +110,6 @@ export default function HowItWorks() {
               />
             </div>
           </motion.div>
-        </div>
-
-        {/* Pillars */}
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-          {pillars.map((pillar, index) => {
-            const Icon = pillar.icon
-            return (
-              <motion.div
-                key={pillar.title}
-                custom={index + 2}
-                variants={fadeUp}
-                initial="hidden"
-                animate={inView ? 'visible' : 'hidden'}
-                className="group relative rounded-2xl border border-cream-300/60 bg-white/50 px-6 py-7 shadow-luxury-sm backdrop-blur-[2px] transition-shadow duration-300 hover:shadow-luxury"
-              >
-                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full border border-gold-400/35 bg-forest-900 shadow-luxury-sm transition-transform duration-300 group-hover:scale-[1.03]">
-                  <Icon className="h-5 w-5 text-gold-400" strokeWidth={1.5} />
-                </div>
-                <h3 className="mb-3 font-serif text-lg font-semibold text-charcoal">{pillar.title}</h3>
-                <p className="font-sans text-sm leading-relaxed text-charcoal/58">{pillar.body}</p>
-              </motion.div>
-            )
-          })}
         </div>
       </div>
     </section>
