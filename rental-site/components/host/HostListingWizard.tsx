@@ -44,8 +44,6 @@ import {
   type ChatDocument,
 } from '@/app/host/listings/chatbot-actions'
 import { Bot } from 'lucide-react'
-import ImportFromUrlCard from './wizard/ImportFromUrlCard'
-import type { ListingDraftInput } from '@/app/host/listings/actions'
 
 // ─── Step definitions ──────────────────────────────────────────────────────────
 
@@ -517,58 +515,6 @@ export default function HostListingWizard({
     setChatbotDocs((prev) => prev.filter((d) => d.id !== doc.id))
   }
 
-  // ─── Import from external listing URL ─────────────────────────────────────
-
-  const applyListingImportToState = ({
-    patch,
-    newImages,
-    appliedFields,
-    warnings,
-  }: {
-    patch: Partial<ListingDraftInput>
-    newImages: ImageRow[]
-    appliedFields: string[]
-    warnings: string[]
-  }) => {
-    if (patch.title && appliedFields.includes('title')) setTitle(patch.title)
-    if (patch.description && appliedFields.includes('description')) setDescription(patch.description)
-    if (patch.vehicle_make && appliedFields.includes('vehicle_make')) setVehicleMake(patch.vehicle_make)
-    if (patch.vehicle_model && appliedFields.includes('vehicle_model')) setVehicleModel(patch.vehicle_model)
-    if (patch.vehicle_year != null && appliedFields.includes('vehicle_year')) {
-      setVehicleYear(patch.vehicle_year)
-    }
-    if (patch.sleeps != null && appliedFields.includes('sleeps')) setSleeps(patch.sleeps)
-    if (patch.seatbelts != null && appliedFields.includes('seatbelts')) setSeatbelts(patch.seatbelts)
-    if (patch.length_label && appliedFields.includes('length_label')) setLengthLabel(patch.length_label)
-    if (patch.vehicle_class && appliedFields.includes('vehicle_class')) setVehicleClass(patch.vehicle_class)
-    if (patch.category && appliedFields.includes('category')) setCategory(patch.category as Van['category'])
-    if (patch.location_label && appliedFields.includes('location_label')) setLocationLabel(patch.location_label)
-    if (patch.price_per_night_cents != null && appliedFields.includes('price_per_night_cents')) {
-      setPricePerNight(Math.round(patch.price_per_night_cents / 100))
-    }
-    if (patch.amenities && appliedFields.includes('amenities')) {
-      setAmenities(patch.amenities as AmenityItem[])
-    }
-    if (newImages.length > 0) {
-      setImages((prev) => [
-        ...prev,
-        ...newImages.filter((n) => !prev.some((p) => p.url === n.url)),
-      ])
-    }
-
-    const totalApplied = appliedFields.length
-    const imageSummary = newImages.length > 0 ? `, ${newImages.length} photo${newImages.length !== 1 ? 's' : ''}` : ''
-    const warningText = warnings.length > 0 ? ` Note: ${warnings[0]}` : ''
-    if (totalApplied > 0 || newImages.length > 0) {
-      setMessage(
-        `✓ Imported ${totalApplied} field${totalApplied !== 1 ? 's' : ''}${imageSummary}.${warningText} Review the filled fields before publishing.`
-      )
-    } else {
-      setMessage('Import found no new data to fill in.')
-    }
-    router.refresh()
-  }
-
   // ─── Derived ───────────────────────────────────────────────────────────────
 
   const coverThumb =
@@ -700,11 +646,6 @@ export default function HostListingWizard({
         {/* Tab content */}
         <div className="bg-neutral-50/50 px-4 py-6 sm:px-6">
           <p className="mb-5 text-xs text-neutral-500">{STEPS[step].desc}</p>
-
-          {/* Import from external listing URL — shown only on Vehicle (step 0) */}
-          {step === 0 && (
-            <ImportFromUrlCard listingId={listingId} onImported={applyListingImportToState} />
-          )}
 
           {message && (
             <p className={[
