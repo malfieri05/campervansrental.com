@@ -1,47 +1,43 @@
 'use client'
 
+import Image from 'next/image'
 import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
-import { Search, Sparkles, Map } from 'lucide-react'
+import { Layers, Gauge, Mountain } from 'lucide-react'
 
-const steps = [
+const pillars = [
   {
-    number: '01',
-    icon: Search,
-    title: 'Choose Your Van',
-    description:
-      'Browse our curated fleet, select your ideal vehicle, pick your dates, and choose a pickup location. Our team is available to help you match the right van to your trip.',
-    details: [
-      'Filter by size, category, and features',
-      'Flexible pickup locations across the West',
-      'Real-time availability calendar',
-    ],
+    icon: Layers,
+    title: 'Full marketplace structure',
+    body:
+      'Calendars, bookings, and host tools patterned after what works on the biggest rental platforms—so nothing feels improvised.',
   },
   {
-    number: '02',
-    icon: Sparkles,
-    title: 'We Prepare Everything',
-    description:
-      'We detail the van to perfection, stock it with your requested provisions, verify all systems, and ensure your adventure begins flawlessly the moment you turn the key.',
-    details: [
-      'Full professional detail before each rental',
-      'Optional grocery and provision pre-stocking',
-      'Personalized route recommendations included',
-    ],
+    icon: Gauge,
+    title: 'Owners steer pricing',
+    body:
+      'Hosts set rates and fees with room to breathe. Less middleman markup means the same trip often costs travelers less out the door.',
   },
   {
-    number: '03',
-    icon: Map,
-    title: 'Explore in Luxury',
-    description:
-      'Hit the road knowing every detail has been handled. 24/7 concierge support, roadside assistance, and a fleet that performs as beautifully as it looks.',
-    details: [
-      '24/7 concierge and roadside support',
-      'In-van guide with routes and recommendations',
-      'Seamless check-in and check-out experience',
-    ],
+    icon: Mountain,
+    title: 'Built by people who camp',
+    body:
+      'Camping enthusiasts and van owners who got tired of rising platform fees—for renters and hosts alike. Fair search-to-return was the goal.',
   },
 ]
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 28 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.65,
+      delay: i * 0.08,
+      ease: [0.25, 0.46, 0.45, 0.94],
+    },
+  }),
+}
 
 export default function HowItWorks() {
   const sectionRef = useRef(null)
@@ -49,86 +45,122 @@ export default function HowItWorks() {
 
   return (
     <section
-      id="how-it-works"
+      id="our-platform"
       ref={sectionRef}
-      className="bg-cream-100 py-14 sm:py-24 px-6 lg:px-10 overflow-hidden"
+      className="relative overflow-hidden bg-cream-100 px-6 py-14 sm:py-24 lg:px-10"
     >
-      <div className="max-w-6xl mx-auto">
-        {/* Section Header */}
-          <div className="text-center mb-12 sm:mb-20">
-          <div className="flex items-center justify-center gap-4 mb-5">
+      {/* Soft ambient accents */}
+      <div
+        className="pointer-events-none absolute -left-32 top-1/4 h-72 w-72 rounded-full bg-gold-400/8 blur-3xl"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -right-24 bottom-1/4 h-64 w-64 rounded-full bg-forest-900/6 blur-3xl"
+        aria-hidden
+      />
+
+      <div className="relative z-10 mx-auto max-w-6xl">
+        {/* Eyebrow */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className="mb-10 flex flex-col items-center text-center sm:mb-14"
+        >
+          <div className="mb-5 flex items-center justify-center gap-4">
             <div className="h-px w-16 bg-gradient-to-r from-transparent to-gold-400" />
             <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-gold-500">
-              The Process
+              Our platform
             </span>
             <div className="h-px w-16 bg-gradient-to-l from-transparent to-gold-400" />
           </div>
+
           <h2
-            className="font-serif text-charcoal font-bold mb-5 leading-tight"
-            style={{ fontSize: 'clamp(2rem, 4vw, 3rem)' }}
+            className="mb-5 max-w-3xl font-serif font-bold leading-tight text-charcoal"
+            style={{ fontSize: 'clamp(1.85rem, 4vw, 2.85rem)' }}
           >
-            How It Works
+            Big-platform polish—without the endless fee stack.
           </h2>
-          <p className="font-sans text-charcoal/55 text-lg max-w-xl mx-auto">
-            Three simple steps between you and the most extraordinary road trip of your life.
+
+          <p className="max-w-2xl font-sans text-lg leading-relaxed text-charcoal/60">
+            All of the structure and support you expect from a major rental marketplace, with pricing
+            that stays closer to the trip itself.
           </p>
+        </motion.div>
+
+        {/* Narrative + image */}
+        <div className="mb-16 grid items-center gap-10 lg:grid-cols-2 lg:gap-14 xl:gap-20">
+          <motion.div
+            custom={0}
+            variants={fadeUp}
+            initial="hidden"
+            animate={inView ? 'visible' : 'hidden'}
+            className="order-2 lg:order-1"
+          >
+            <p className="mb-6 font-sans text-base leading-relaxed text-charcoal/65 sm:text-[1.05rem]">
+              This platform was built by camping enthusiasts and van owners who were tired of the
+              ever-increasing fees alternative platforms forced onto renters and owners. We wanted a
+              rental home where hosts keep meaningful control over what guests are charged—so we can
+              deliver the same attentive, full-service experience travelers deserve at a lower total
+              cost.
+            </p>
+            <div className="rounded-xl border border-gold-400/25 bg-white/40 px-5 py-4 backdrop-blur-sm ring-1 ring-black/[0.03]">
+              <p className="font-display text-[0.65rem] font-bold uppercase tracking-[0.18em] text-forest-800">
+                What that means for you
+              </p>
+              <p className="mt-2 font-sans text-sm leading-relaxed text-charcoal/60">
+                Renters get booking clarity and roadside-ready vans. Hosts get tools they recognize—
+                without watching fees eat the margin on both sides of every reservation.
+              </p>
+            </div>
+          </motion.div>
+
+          <motion.div
+            custom={1}
+            variants={fadeUp}
+            initial="hidden"
+            animate={inView ? 'visible' : 'hidden'}
+            className="relative order-1 lg:order-2"
+          >
+            <div className="relative mx-auto aspect-[4/5] max-w-md overflow-hidden rounded-2xl shadow-luxury ring-1 ring-gold-400/20">
+              <Image
+                src="/rearvan.png"
+                alt="Camper van ready for the road"
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 420px"
+              />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-forest-950/35 via-transparent to-transparent" />
+            </div>
+            {/* Decorative frame offset */}
+            <div
+              className="pointer-events-none absolute -bottom-3 -right-3 -z-10 hidden h-full w-full rounded-2xl border border-gold-400/35 sm:block"
+              aria-hidden
+            />
+          </motion.div>
         </div>
 
-        {/* Steps */}
-        <div className="relative">
-          {/* Connecting line — desktop only */}
-          <div className="hidden lg:block absolute top-16 left-[calc(16.6%+1rem)] right-[calc(16.6%+1rem)] h-px bg-gradient-to-r from-gold-400/30 via-gold-400/60 to-gold-400/30 z-0" />
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-8 relative z-10">
-            {steps.map((step, index) => {
-              const Icon = step.icon
-              return (
-                <motion.div
-                  key={step.number}
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={inView ? { opacity: 1, y: 0 } : {}}
-                  transition={{
-                    duration: 0.7,
-                    delay: index * 0.2,
-                    ease: [0.25, 0.46, 0.45, 0.94],
-                  }}
-                  className="flex flex-col items-center text-center"
-                >
-                  {/* Number + Icon Stack */}
-                  <div className="relative mb-8">
-                    {/* Big number behind */}
-                    <span className="font-serif text-8xl font-bold text-gold-400/15 leading-none select-none absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                      {step.number}
-                    </span>
-                    {/* Icon circle */}
-                    <div className="relative w-16 h-16 rounded-full bg-forest-900 border-2 border-gold-400/30 flex items-center justify-center shadow-luxury-sm mx-auto mt-3">
-                      <Icon className="w-7 h-7 text-gold-400" strokeWidth={1.5} />
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <h3 className="font-serif text-xl font-semibold text-charcoal mb-4">
-                    {step.title}
-                  </h3>
-                  <p className="font-sans text-sm text-charcoal/60 leading-relaxed mb-6 max-w-xs">
-                    {step.description}
-                  </p>
-
-                  {/* Details */}
-                  <ul className="space-y-2.5 text-left w-full max-w-xs">
-                    {step.details.map((detail, i) => (
-                      <li key={i} className="flex items-start gap-2.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-gold-400 flex-shrink-0 mt-2" />
-                        <span className="font-sans text-xs text-charcoal/55 leading-relaxed">
-                          {detail}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </motion.div>
-              )
-            })}
-          </div>
+        {/* Pillars */}
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+          {pillars.map((pillar, index) => {
+            const Icon = pillar.icon
+            return (
+              <motion.div
+                key={pillar.title}
+                custom={index + 2}
+                variants={fadeUp}
+                initial="hidden"
+                animate={inView ? 'visible' : 'hidden'}
+                className="group relative rounded-2xl border border-cream-300/60 bg-white/50 px-6 py-7 shadow-luxury-sm backdrop-blur-[2px] transition-shadow duration-300 hover:shadow-luxury"
+              >
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full border border-gold-400/35 bg-forest-900 shadow-luxury-sm transition-transform duration-300 group-hover:scale-[1.03]">
+                  <Icon className="h-5 w-5 text-gold-400" strokeWidth={1.5} />
+                </div>
+                <h3 className="mb-3 font-serif text-lg font-semibold text-charcoal">{pillar.title}</h3>
+                <p className="font-sans text-sm leading-relaxed text-charcoal/58">{pillar.body}</p>
+              </motion.div>
+            )
+          })}
         </div>
       </div>
     </section>
