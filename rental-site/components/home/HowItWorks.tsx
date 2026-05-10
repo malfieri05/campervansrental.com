@@ -74,12 +74,12 @@ export default function HowItWorks() {
               <Image
                 src="/favicon.png"
                 alt=""
-                width={32}
-                height={32}
-                className="mt-0.5 h-8 w-8 shrink-0 object-contain"
+                width={35}
+                height={35}
+                className="mt-0.5 h-[2.2rem] w-[2.2rem] shrink-0 object-contain"
                 aria-hidden
               />
-              <p className="font-display text-[0.65rem] font-bold uppercase leading-relaxed tracking-[0.18em] text-forest-800">
+              <p className="font-display text-[0.6825rem] font-bold uppercase leading-relaxed tracking-[0.18em] text-gold-500">
                 All of the structure and support you get from a major rental marketplace, without a
                 greedy middleman.
               </p>
