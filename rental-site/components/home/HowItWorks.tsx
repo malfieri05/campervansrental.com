@@ -70,7 +70,7 @@ export default function HowItWorks() {
             animate={inView ? 'visible' : 'hidden'}
             className="order-2 max-w-xl lg:order-1 lg:max-w-none lg:pr-2"
           >
-            <div className="mb-6 flex gap-3 rounded-xl border-2 border-forest-800/55 bg-white/50 px-5 py-4 shadow-luxury backdrop-blur-sm -translate-y-1 transition-shadow duration-300 hover:shadow-[0_16px_48px_-14px_rgba(10,45,33,0.22)]">
+            <div className="mb-6 flex gap-3 rounded-xl border border-gold-400/25 bg-white/40 px-5 py-4 backdrop-blur-sm ring-1 ring-black/[0.03]">
               <Image
                 src="/favicon.png"
                 alt=""

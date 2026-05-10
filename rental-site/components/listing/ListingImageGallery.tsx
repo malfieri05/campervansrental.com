@@ -10,7 +10,7 @@ import {
   useState,
   useCallback,
 } from 'react'
-import { ChevronLeft, ChevronRight, Share2, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Share, X } from 'lucide-react'
 
 const PLACEHOLDER =
   'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?w=800'
@@ -371,8 +371,8 @@ function HeroGrid({
           />
           {/* "View all" pill — only if there are more than 5 */}
           {total > 5 && (
-            <span className="absolute inset-0 flex items-end justify-end p-3 pointer-events-none">
-              <span className="bg-charcoal/75 backdrop-blur-sm text-cream-50 font-sans text-xs font-semibold px-3 py-1.5 rounded-full">
+            <span className="pointer-events-none absolute inset-0 flex items-end justify-end p-2 md:p-3">
+              <span className="max-w-[78%] rounded-full bg-charcoal/75 px-2 py-1 text-center font-sans text-[0.625rem] font-semibold leading-snug text-cream-50 backdrop-blur-sm md:max-w-none md:px-3 md:py-1.5 md:text-left md:text-xs md:leading-normal">
                 View all {total} photos
               </span>
             </span>
@@ -447,7 +447,7 @@ export default function ListingImageGallery({
             <span className="text-forest-700 text-xs">Shared!</span>
           ) : (
             <>
-              <Share2 className="w-4 h-4" />
+              <Share className="w-4 h-4" strokeWidth={2.5} />
               Share
             </>
           )}

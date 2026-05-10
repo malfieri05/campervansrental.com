@@ -50,9 +50,7 @@ export default function VanCard({ van }: VanCardProps) {
         'group/card flex flex-col bg-white rounded-2xl overflow-hidden cursor-pointer',
         'border border-neutral-200/90 shadow-sm',
         'transition-all duration-300 ease-out',
-        'hover:-translate-y-1 hover:border-gold-400/45 hover:shadow-lg hover:shadow-black/[0.08]',
-        'hover:ring-2 hover:ring-gold-400/25 hover:ring-offset-2 hover:ring-offset-cream-100',
-        'focus-within:ring-2 focus-within:ring-forest-600 focus-within:ring-offset-2 focus-within:ring-offset-cream-100',
+        'hover:-translate-y-1 hover:shadow-lg hover:shadow-black/[0.08]',
       ].join(' ')}
     >
       {/* Image block */}
@@ -70,8 +68,8 @@ export default function VanCard({ van }: VanCardProps) {
           href={listingHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="absolute inset-0 z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-forest-500"
-          aria-label={`View ${van.name}`}
+          tabIndex={-1}
+          className="absolute inset-0 z-10 cursor-pointer"
         />
 
         {/* Arrows */}
@@ -120,7 +118,7 @@ export default function VanCard({ van }: VanCardProps) {
         href={listingHref}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex flex-col gap-0.5 px-4 py-3.5 focus-visible:outline-none rounded-b-2xl"
+        className="flex flex-col gap-0.5 px-4 py-3.5 rounded-b-2xl"
       >
         <h3 className="font-sans text-[0.9rem] font-semibold text-charcoal leading-snug line-clamp-2 transition-colors group-hover/card:text-forest-800">
           {van.name}
@@ -129,7 +127,7 @@ export default function VanCard({ van }: VanCardProps) {
         <p className="font-sans text-xs text-charcoal/50">{van.location}</p>
 
         {/* Price + rating */}
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-neutral-100 transition-colors group-hover/card:border-gold-400/25">
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-neutral-100">
           <div>
             <span className="font-sans text-base font-bold text-charcoal transition-colors group-hover/card:text-gold-600">
               ${van.pricePerNight.toLocaleString()}
