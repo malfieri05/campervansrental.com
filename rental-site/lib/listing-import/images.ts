@@ -7,6 +7,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { ImageRow } from '@/components/host/wizard/steps/PhotosStep'
+import { IMPORT_BROWSER_USER_AGENT } from '@/lib/listing-import/user-agent'
 
 const MAX_IMAGES = 10
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024 // 10 MB per image
@@ -21,7 +22,9 @@ async function downloadImage(url: string): Promise<{ buffer: Uint8Array; mimeTyp
       method: 'GET',
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; CampervansRental-Importer/1.0)',
+        'User-Agent': IMPORT_BROWSER_USER_AGENT,
+        Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
       },
     })
     clearTimeout(timer)

@@ -4,6 +4,8 @@
  * caps the response body, and applies a hard timeout.
  */
 
+import { IMPORT_BROWSER_USER_AGENT } from './user-agent'
+
 const ALLOWED_HOSTNAMES = new Set([
   'outdoorsy.com',
   'www.outdoorsy.com',
@@ -66,6 +68,62 @@ function validateUrl(raw: string): URL {
 const FETCH_TIMEOUT_MS = 12_000
 const MAX_BODY_BYTES = 2 * 1024 * 1024 // 2 MB
 
+/** Mimics clicking from the site's homepage (same-origin navigation). */
+function listingFetchHeadersSameOrigin(listUrl: URL): HeadersInit {
+  const origin = `${listUrl.protocol}//${listUrl.hostname}`
+  return {
+    'User-Agent': IMPORT_BROWSER_USER_AGENT,
+    Accept:
+      'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    Referer: `${origin}/`,
+    'Upgrade-Insecure-Requests': '1',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'same-origin',
+    'Sec-Fetch-User': '?1',
+    'Cache-Control': 'max-age=0',
+    DNT: '1',
+  }
+}
+
+/** Alternate fingerprint: typed URL / external referrer (some WAFs expect this). */
+function listingFetchHeadersCrossSite(listUrl: URL): HeadersInit {
+  const origin = `${listUrl.protocol}//${listUrl.hostname}`
+  return {
+    'User-Agent': IMPORT_BROWSER_USER_AGENT,
+    Accept:
+      'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    Referer: 'https://www.google.com/',
+    'Upgrade-Insecure-Requests': '1',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'cross-site',
+    'Sec-Fetch-User': '?1',
+    'Cache-Control': 'max-age=0',
+    // Hint we followed a search result to this listing domain
+    ...(origin.includes('outdoorsy')
+      ? ({ 'Sec-CH-UA-Mobile': '?0', 'Sec-CH-UA-Platform': '"macOS"' } as HeadersInit)
+      : {}),
+  }
+}
+
+function httpErrorMessage(status: number): string {
+  if (status === 403 || status === 401) {
+    return (
+      `The marketplace blocked this request (HTTP ${status}). Their site often rejects automated fetches from servers. ` +
+      `Try again from another network, import an RVezy URL instead, or copy your listing details manually into each section.`
+    )
+  }
+  if (status === 429) {
+    return 'Too many requests (HTTP 429). Wait a few minutes and try again.'
+  }
+  return `The listing page returned HTTP ${status}`
+}
+
 /**
  * Fetch HTML from an external listing URL with safety guards applied.
  * Returns the HTML string, or throws with a user-readable message.
@@ -82,13 +140,18 @@ export async function fetchListingHtml(rawUrl: string): Promise<string> {
       method: 'GET',
       redirect: 'follow',
       signal: controller.signal,
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (compatible; CampervansRental-Importer/1.0; +https://campervansrental.com)',
-        Accept: 'text/html,application/xhtml+xml',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
+      headers: listingFetchHeadersSameOrigin(url),
     })
+
+    // One retry with a different Sec-Fetch-* fingerprint — reduces false 403s from bot checks
+    if (!response.ok && response.status === 403) {
+      response = await fetch(url.toString(), {
+        method: 'GET',
+        redirect: 'follow',
+        signal: controller.signal,
+        headers: listingFetchHeadersCrossSite(url),
+      })
+    }
   } catch (err: unknown) {
     clearTimeout(timer)
     const msg = err instanceof Error ? err.message : String(err)
@@ -108,7 +171,7 @@ export async function fetchListingHtml(rawUrl: string): Promise<string> {
   }
 
   if (!response.ok) {
-    throw new Error(`The listing page returned HTTP ${response.status}`)
+    throw new Error(httpErrorMessage(response.status))
   }
 
   const contentType = response.headers.get('content-type') ?? ''
