@@ -142,19 +142,19 @@ export default function Hero() {
       >
         <div className="max-w-5xl mx-auto">
           <div className="glass-card rounded-2xl shadow-luxury ring-1 ring-black/10 overflow-hidden border border-cream-200/30">
-            {/* Mobile: 2-col compact grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-cream-300/20">
-              {/* Pickup Location — spans full width on mobile */}
-              <div className="col-span-2 md:col-span-1 flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-5 border-b border-cream-300/20 md:border-b-0">
+            {/* Mobile: 2×2 (location | guests / pick up | return) + full-width search; md+: horizontal bar */}
+            <div className="grid grid-cols-2 md:grid-cols-4 md:divide-x md:divide-cream-300/20">
+              {/* Pickup Location */}
+              <div className="flex max-md:col-start-1 max-md:row-start-1 max-md:border-r max-md:border-b border-cream-300/20 items-center gap-3 px-4 py-3.5 sm:px-6 sm:py-5 md:border-0 md:py-5">
                 <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gold-500 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <label className="font-display text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-0.5">
+                  <label className="font-display text-[0.65rem] md:text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-1 md:mb-0.5">
                     Pickup Location
                   </label>
                   <select
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    className="w-full bg-transparent font-sans text-sm text-charcoal font-medium focus:outline-none cursor-pointer appearance-none"
+                    className="w-full bg-transparent font-sans text-base md:text-sm text-charcoal font-medium focus:outline-none cursor-pointer appearance-none min-h-[44px] md:min-h-0 py-0.5 md:py-0"
                   >
                     <option value="">Select a location</option>
                     {locationOptions.map((loc) => (
@@ -167,14 +167,14 @@ export default function Hero() {
               {/* Pick Up Date — full-cell tap opens native picker (Safari-safe via showPicker) */}
               <div
                 ref={pickUpDateCellRef}
-                className="relative flex min-h-[4.25rem] items-center gap-3 border-b border-cream-300/20 px-4 py-3 sm:px-6 sm:py-5 md:border-b-0 md:border-l border-cream-300/20"
+                className="relative flex max-md:col-start-1 max-md:row-start-2 max-md:border-r max-md:border-b border-cream-300/20 min-h-[3.25rem] items-center gap-3 px-4 py-3.5 sm:px-6 sm:py-5 md:border-0 md:min-h-[4.25rem]"
               >
                 <Calendar className="relative z-0 h-4 w-4 shrink-0 text-gold-500 sm:h-5 sm:w-5 pointer-events-none" aria-hidden />
                 <div className="relative z-0 min-w-0 flex-1 pointer-events-none">
-                  <span className="font-display mb-0.5 block text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700">
+                  <span className="font-display mb-1 md:mb-0.5 block text-[0.65rem] md:text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700">
                     Pick Up
                   </span>
-                  <span className="font-sans block text-sm font-medium text-charcoal">
+                  <span className="font-sans block text-base md:text-sm font-medium text-charcoal">
                     {checkIn ? formatDateLabel(checkIn) : <span className="text-charcoal/40">Add date</span>}
                   </span>
                 </div>
@@ -192,14 +192,14 @@ export default function Hero() {
               {/* Return Date */}
               <div
                 ref={returnDateCellRef}
-                className="relative flex min-h-[4.25rem] items-center gap-3 border-l border-cream-300/20 px-4 py-3 sm:px-6 sm:py-5"
+                className="relative flex max-md:col-start-2 max-md:row-start-2 max-md:border-b border-cream-300/20 min-h-[3.25rem] items-center gap-3 px-4 py-3.5 sm:px-6 sm:py-5 md:border-0 md:min-h-[4.25rem]"
               >
                 <Calendar className="relative z-0 h-4 w-4 shrink-0 text-gold-500 sm:h-5 sm:w-5 pointer-events-none" aria-hidden />
                 <div className="relative z-0 min-w-0 flex-1 pointer-events-none">
-                  <span className="font-display mb-0.5 block text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700">
+                  <span className="font-display mb-1 md:mb-0.5 block text-[0.65rem] md:text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700">
                     Return
                   </span>
-                  <span className="font-sans block text-sm font-medium text-charcoal">
+                  <span className="font-sans block text-base md:text-sm font-medium text-charcoal">
                     {checkOut ? formatDateLabel(checkOut) : <span className="text-charcoal/40">Add date</span>}
                   </span>
                 </div>
@@ -214,29 +214,35 @@ export default function Hero() {
                 />
               </div>
 
-              {/* Guests + Search */}
-              <div className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-5 border-l border-cream-300/20">
-                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-gold-500 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <label className="font-display text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-0.5">
-                    Guests
-                  </label>
-                  <select
-                    value={guests}
-                    onChange={(e) => setGuests(Number(e.target.value))}
-                    className="w-full bg-transparent font-sans text-sm text-charcoal font-medium focus:outline-none cursor-pointer appearance-none"
-                  >
-                    {[1, 2, 3, 4].map((n) => (
-                      <option key={n} value={n}>{n} {n === 1 ? 'Guest' : 'Guests'}</option>
-                    ))}
-                  </select>
+              {/* Guests + Search: `contents` on mobile so guests + button are separate grid cells; md:flex = one segment */}
+              <div className="contents md:flex md:min-h-[4.25rem] md:flex-row md:items-center md:gap-3 md:px-6 md:py-5">
+                <div className="flex max-md:col-start-2 max-md:row-start-1 max-md:border-b border-cream-300/20 min-h-[3.25rem] min-w-0 flex-1 items-center gap-3 px-4 py-3.5 sm:px-6 sm:py-5 md:min-h-0 md:border-0 md:px-0 md:py-0">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 text-gold-500 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <label className="font-display text-[0.65rem] md:text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-1 md:mb-0.5">
+                      Guests
+                    </label>
+                    <select
+                      value={guests}
+                      onChange={(e) => setGuests(Number(e.target.value))}
+                      className="w-full bg-transparent font-sans text-base md:text-sm text-charcoal font-medium focus:outline-none cursor-pointer appearance-none min-h-[44px] md:min-h-0 py-0.5 md:py-0"
+                    >
+                      {[1, 2, 3, 4].map((n) => (
+                        <option key={n} value={n}>{n} {n === 1 ? 'Guest' : 'Guests'}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <button
+                  type="button"
                   onClick={handleSearch}
                   aria-label="Search"
-                  className="ml-1 w-10 h-10 sm:w-11 sm:h-11 bg-gold-400 hover:bg-gold-300 rounded-sm flex items-center justify-center transition-colors duration-200 flex-shrink-0 shadow-gold"
+                  className="max-md:col-span-2 max-md:row-start-3 flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-sm bg-gold-400 px-4 shadow-gold transition-colors duration-200 hover:bg-gold-300 md:ml-1 md:h-11 md:w-11 md:px-0"
                 >
-                  <Search className="w-4 h-4 sm:w-5 sm:h-5 text-forest-950" strokeWidth={2} />
+                  <Search className="h-4 w-4 text-forest-950 sm:h-5 sm:w-5" strokeWidth={2} />
+                  <span className="font-display text-sm font-bold uppercase tracking-[0.12em] text-forest-950 md:hidden">
+                    Search
+                  </span>
                 </button>
               </div>
             </div>
