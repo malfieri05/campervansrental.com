@@ -70,11 +70,16 @@ export default function HowItWorks() {
             animate={inView ? 'visible' : 'hidden'}
             className="order-2 max-w-xl lg:order-1 lg:max-w-none lg:pr-2"
           >
-            <div className="mb-6 rounded-xl border border-gold-400/25 bg-white/40 px-5 py-4 backdrop-blur-sm ring-1 ring-black/[0.03]">
-              <p className="font-display text-[0.65rem] font-bold uppercase tracking-[0.18em] text-forest-800">
-                What that means for you
-              </p>
-              <p className="mt-2 font-sans text-sm leading-relaxed text-charcoal/60">
+            <div className="mb-6 flex gap-3 rounded-xl border border-gold-400/25 bg-white/40 px-5 py-4 backdrop-blur-sm ring-1 ring-black/[0.03]">
+              <Image
+                src="/favicon.png"
+                alt=""
+                width={32}
+                height={32}
+                className="mt-0.5 h-8 w-8 shrink-0 object-contain"
+                aria-hidden
+              />
+              <p className="font-display text-[0.65rem] font-bold uppercase leading-relaxed tracking-[0.18em] text-forest-800">
                 All of the structure and support you get from a major rental marketplace, without a
                 greedy middleman.
               </p>
