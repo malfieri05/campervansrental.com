@@ -88,14 +88,14 @@ export default function HowItWorks() {
           </p>
         </motion.div>
 
-        {/* Narrative + image */}
-        <div className="mb-16 grid items-center gap-10 lg:grid-cols-2 lg:gap-14 xl:gap-20">
+        {/* Narrative + image — wider image column; photo uses intrinsic aspect (no cover crop) */}
+        <div className="mb-16 grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:gap-10 xl:gap-14">
           <motion.div
             custom={0}
             variants={fadeUp}
             initial="hidden"
             animate={inView ? 'visible' : 'hidden'}
-            className="order-2 lg:order-1"
+            className="order-2 max-w-xl lg:order-1 lg:max-w-none lg:pr-2"
           >
             <p className="mb-6 font-sans text-base leading-relaxed text-charcoal/65 sm:text-[1.05rem]">
               This platform was built by camping enthusiasts and van owners who were tired of the
@@ -122,21 +122,20 @@ export default function HowItWorks() {
             animate={inView ? 'visible' : 'hidden'}
             className="relative order-1 lg:order-2"
           >
-            <div className="relative mx-auto aspect-[4/5] max-w-md overflow-hidden rounded-2xl shadow-luxury ring-1 ring-gold-400/20">
+            <div className="relative mx-auto w-full max-w-xl lg:max-w-2xl lg:justify-self-end">
               <Image
-                src="/rearvan.png"
-                alt="Camper van ready for the road"
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 420px"
+                src="/vanmountain.png"
+                alt="Guests enjoying breakfast with a mountain view from the back of a camper van"
+                width={600}
+                height={450}
+                className="relative z-10 h-auto w-full rounded-2xl shadow-luxury ring-1 ring-gold-400/20"
+                sizes="(max-width: 1024px) 100vw, min(640px, 55vw)"
               />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-forest-950/35 via-transparent to-transparent" />
+              <div
+                className="pointer-events-none absolute -bottom-3 -right-3 left-3 top-3 -z-10 hidden rounded-2xl border border-gold-400/35 sm:block"
+                aria-hidden
+              />
             </div>
-            {/* Decorative frame offset */}
-            <div
-              className="pointer-events-none absolute -bottom-3 -right-3 -z-10 hidden h-full w-full rounded-2xl border border-gold-400/35 sm:block"
-              aria-hidden
-            />
           </motion.div>
         </div>
 
