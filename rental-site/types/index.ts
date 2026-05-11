@@ -22,7 +22,13 @@ export interface Van {
   available: boolean
   rating: number
   reviewCount: number
+  /** Marketplace / search region (e.g. metro filter on home). */
   location: string
+  /**
+   * When the host saved structured address, city + state/region for renter-facing
+   * pickup copy (no street). Prefer `vanPickupDisplay()` in UI; omit for static demo vans.
+   */
+  pickupAreaPublic?: string | null
   /** From DB listing row; defaults used in UI when absent */
   cleaningFeeCents?: number
   insuranceFeeCents?: number
@@ -42,6 +48,8 @@ export interface Van {
   pickupDropoffRulesDocUrl?: string | null
   /** Whether host has enabled the per-listing chatbot */
   listingChatbotEnabled?: boolean
+  /** Host cancellation tier from listings.cancellation_policy (Outdoorsy-style presets). */
+  cancellationPolicy?: 'flexible' | 'moderate' | 'strict' | null
 }
 
 export interface Amenity {

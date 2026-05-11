@@ -15,15 +15,31 @@ export default function Footer() {
 
         {/* Mobile: single centered column. sm+: three-column row */}
         <div className="py-8 pb-4 flex flex-col items-center gap-4 sm:grid sm:grid-cols-3 sm:items-center sm:gap-8">
-          <p className="text-xs font-sans text-cream-200/40 text-center sm:text-left order-3 sm:order-1">
-            © {year} Camper Van Rentals. All rights reserved.
-          </p>
+          <div className="flex max-w-sm flex-col gap-3 text-center sm:max-w-none sm:text-left order-1 sm:order-1">
+            <p className="font-serif text-sm italic text-cream-50/90 sm:text-base leading-snug">
+              Made for the modern explorer
+            </p>
+            <p className="text-xs font-sans text-cream-200/40">
+              © {year} Camper Van Rentals. All rights reserved.
+            </p>
+          </div>
 
-          <p className="font-serif text-sm italic text-cream-50/90 sm:text-base text-center leading-snug order-1 sm:order-2">
-            Made for the modern explorer
-          </p>
+          <div className="flex flex-col items-center gap-1.5 font-sans text-xs text-cream-200/70 sm:text-sm order-2 sm:order-2">
+            <a
+              href="mailto:support@campervansrental.com"
+              className="transition-colors hover:text-gold-400/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-forest-950 rounded-sm"
+            >
+              support@campervansrental.com
+            </a>
+            <a
+              href="tel:+15037645097"
+              className="transition-colors hover:text-gold-400/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-forest-950 rounded-sm"
+            >
+              503 764-5097
+            </a>
+          </div>
 
-          <div className="flex justify-center sm:justify-end order-2 sm:order-3">
+          <div className="flex justify-center sm:justify-end order-3 sm:order-3">
             <Link
               href="/"
               className="group inline-flex w-fit transition-opacity group-hover:opacity-90"

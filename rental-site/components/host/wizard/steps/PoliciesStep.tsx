@@ -24,7 +24,7 @@ const CANCELLATION_OPTIONS = [
   {
     value: 'flexible' as CancellationPolicy,
     title: 'Flexible',
-    desc: '100% refund if cancelled 5+ days before pickup · 25% refund if cancelled within 5 days',
+    desc: '100% refund if cancelled 5+ days before pickup · 75% refund if cancelled within 5 days',
   },
   {
     value: 'moderate' as CancellationPolicy,
@@ -48,7 +48,7 @@ export default function PoliciesStep(p: PoliciesStepProps) {
           <p>
             Your cancellation policy directly shapes how often guests feel comfortable booking.
             Flexible and Moderate policies tend to attract significantly more reservations than
-            Strict — especially from first-time RV renters who aren&apos;t yet sure about their plans.
+            Strict — especially from first-time renters who aren&apos;t yet sure about their plans.
           </p>
           <p className="mt-2">
             If you&apos;re unsure, Moderate is a solid default: it protects you while keeping the
@@ -182,7 +182,7 @@ export default function PoliciesStep(p: PoliciesStepProps) {
           <div>
             <p className="text-[0.65rem] font-bold uppercase tracking-widest text-neutral-400 mb-3">Not allowed</p>
             <div className="space-y-3">
-              <Toggle label="Smoke in the RV" value={!p.smokingAllowed} onChange={(v) => p.setSmokingAllowed(!v)} />
+              <Toggle label="Smoke in the vehicle" value={!p.smokingAllowed} onChange={(v) => p.setSmokingAllowed(!v)} />
             </div>
           </div>
         </div>

@@ -8,6 +8,7 @@ import { CalendarDays, ChevronDown, ChevronRight, Flame, MapPin, Package, X } fr
 import type { BlockRange } from '@/lib/availability'
 import { siteUrl } from '@/lib/env'
 import type { Van } from '@/types'
+import { vanPickupDisplay } from '@/lib/listing-public-pickup'
 import ListingCalendar from './ListingCalendar'
 
 const REPORT_EMAIL = 'support@campervansrental.com'
@@ -168,7 +169,7 @@ export default function ListingReservePanel({
         <div className="flex items-center gap-1.5 mt-2">
           <Flame className="w-3.5 h-3.5 text-gold-500 flex-shrink-0" />
           <span className="font-sans text-xs text-charcoal/60">
-            Popular choice! Viewed {viewCount} times this month
+            Viewed {viewCount} times this month
           </span>
         </div>
       </div>
@@ -187,12 +188,12 @@ export default function ListingReservePanel({
           className={[
             'w-full flex items-center justify-between gap-3 border rounded-xl px-4 py-3.5 text-left transition-all duration-200',
             calendarOpen
-              ? 'border-forest-600 ring-2 ring-forest-600/20 bg-forest-50/30'
-              : 'border-neutral-200 bg-white hover:border-neutral-300',
+              ? 'border-black ring-2 ring-black/15 bg-white'
+              : 'border-black bg-white hover:border-black',
           ].join(' ')}
         >
           <div className="flex items-center gap-2.5 min-w-0">
-            <CalendarDays className="w-4 h-4 text-charcoal/40 flex-shrink-0" />
+            <CalendarDays className="w-4 h-4 text-black flex-shrink-0" />
             <span
               className={[
                 'font-sans text-sm truncate',
@@ -219,7 +220,7 @@ export default function ListingReservePanel({
             )}
             <ChevronDown
               className={[
-                'w-4 h-4 text-charcoal/40 transition-transform duration-200',
+                'w-4 h-4 text-black transition-transform duration-200',
                 calendarOpen ? 'rotate-180' : '',
               ].join(' ')}
             />
@@ -256,6 +257,7 @@ export default function ListingReservePanel({
                   checkIn={checkIn}
                   checkOut={checkOut}
                   onDateClick={handleDateClick}
+                  minNights={minNights}
                 />
               </div>
             </>,
@@ -294,7 +296,7 @@ export default function ListingReservePanel({
         {pickupOpen && (
           <div className="px-6 pb-4 font-sans text-sm text-charcoal/60 leading-relaxed space-y-1">
             <p className="font-medium text-charcoal">Pick-up location</p>
-            <p>{van.location}</p>
+            <p>{vanPickupDisplay(van)}</p>
             <p className="text-xs text-charcoal/45 pt-1">
               Exact address and instructions provided after booking is confirmed.
             </p>
@@ -331,8 +333,10 @@ export default function ListingReservePanel({
       {hasDates && (
         <div className="px-6 py-4 border-b border-neutral-100 space-y-2">
           <div className="flex justify-between font-sans text-sm text-charcoal/70">
-            <span>${van.pricePerNight.toLocaleString()} × {nights} night{nights !== 1 ? 's' : ''}</span>
-            <span>${nightsTotal.toLocaleString()}</span>
+            <span>${van.pricePerNight.toLocaleString()}</span>
+            <span>
+              × {nights} night{nights !== 1 ? 's' : ''}
+            </span>
           </div>
           <div className="flex justify-between font-sans text-sm text-charcoal/70">
             <span>Fees</span>

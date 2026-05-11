@@ -3,9 +3,14 @@
 import { createPortal } from 'react-dom'
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Info } from 'lucide-react'
-import { RESERVATION_FEE_TOOLTIP } from '@/lib/booking-pricing'
+import { reservationFeeRefundPolicyCopy } from '@/lib/booking-pricing'
 
-export default function ReservationFeeLabelWithTooltip() {
+export default function ReservationFeeLabelWithTooltip({
+  cancellationPolicy,
+}: {
+  cancellationPolicy?: string | null
+}) {
+  const tooltipText = reservationFeeRefundPolicyCopy(cancellationPolicy)
   const tipId = useId()
   const btnRef = useRef<HTMLButtonElement>(null)
   const [mounted, setMounted] = useState(false)
@@ -63,7 +68,7 @@ export default function ReservationFeeLabelWithTooltip() {
         }}
         className="rounded-md border border-neutral-200 bg-white px-2.5 py-2 text-left font-sans text-[0.7rem] font-normal leading-snug text-charcoal shadow-xl pointer-events-none"
       >
-        {RESERVATION_FEE_TOOLTIP}
+        {tooltipText}
       </span>,
       document.body
     )

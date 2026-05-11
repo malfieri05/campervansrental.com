@@ -9,19 +9,25 @@ import {
   ChevronDown,
   MapPin,
   Pencil,
-  Star,
-  Users,
-  X,
 } from 'lucide-react'
+import RatingOrNewBadge from '@/components/ui/RatingOrNewBadge'
 import type { BlockRange } from '@/lib/availability'
 import { resolveListingDateClick } from '@/lib/listing-date-selection'
 import type { Van } from '@/types'
+import { vanPickupDisplay } from '@/lib/listing-public-pickup'
+import {
+  hasPickupProcedureSection,
+  hostTripPickupTime,
+  hostTripReturnTime,
+  pickupProcedureDocUrl,
+  pickupProcedureText,
+} from '@/lib/listing-trip-guest'
 import ListingCalendar from '@/components/listing/ListingCalendar'
 import ReservationFeeLabelWithTooltip from '@/components/booking/ReservationFeeLabelWithTooltip'
 import {
   reservationFeeCents,
   tripTotalCentsExcludingSecurityDeposit,
-  RESERVATION_FEE_REFUND_COPY,
+  reservationFeeRefundPolicyCopy,
 } from '@/lib/booking-pricing'
 
 interface Props {
@@ -45,15 +51,16 @@ export default function RequestReviewClient({
 }: Props) {
   const [checkIn, setCheckIn] = useState<string | null>(initialStart)
   const [checkOut, setCheckOut] = useState<string | null>(initialEnd)
-  const [guests, setGuests] = useState(initialGuests)
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const [priceBreakdownOpen, setPriceBreakdownOpen] = useState(false)
+
+  const guests = Math.min(Math.max(initialGuests, 1), van.sleeps)
 
   const minNights = van.minNights ?? 1
   const nights =
     checkIn && checkOut
       ? differenceInCalendarDays(parseISO(checkOut), parseISO(checkIn))
       : 0
-  const nightsTotal = nights * van.pricePerNight
   const tripTotalCents =
     nights >= minNights && nights > 0
       ? tripTotalCentsExcludingSecurityDeposit({
@@ -96,13 +103,18 @@ export default function RequestReviewClient({
     params.set('guests', String(guests))
     const url = `/listings/${van.id}/request?${params.toString()}`
     window.history.replaceState(null, '', url)
-  }, [checkIn, checkOut, guests, van.id])
+  }, [checkIn, checkOut, van.id, initialGuests, van.sleeps])
 
   const checkoutHref = hasDates && van.listingUuid
     ? `/checkout?listing=${van.listingUuid}&start=${checkIn}&end=${checkOut}&guests=${guests}`
     : null
 
   const heroImage = van.images[0] ?? '/placeholder.jpg'
+  const pickupTimeLabel = hostTripPickupTime(van)
+  const returnTimeLabel = hostTripReturnTime(van)
+  const procedureBody = pickupProcedureText(van)
+  const procedureDoc = pickupProcedureDocUrl(van)
+  const showProcedure = hasPickupProcedureSection(van)
 
   return (
     <div className="min-h-screen bg-cream-100">
@@ -144,14 +156,11 @@ export default function RequestReviewClient({
                   {van.name}
                 </p>
                 <div className="flex items-center gap-1.5 mt-1">
-                  <Star className="w-3.5 h-3.5 text-gold-500 flex-shrink-0" fill="#e0a82a" strokeWidth={0} />
-                  <span className="font-sans text-xs text-charcoal/60">
-                    {van.rating} ({van.reviewCount})
-                  </span>
+                  <RatingOrNewBadge reviewCount={van.reviewCount} rating={van.rating} size="sm" />
                 </div>
                 <p className="font-sans text-xs text-charcoal/45 mt-1 flex items-center gap-1">
                   <MapPin className="w-3 h-3 flex-shrink-0" />
-                  {van.location}
+                  {vanPickupDisplay(van)}
                 </p>
               </div>
             </div>
@@ -175,24 +184,26 @@ export default function RequestReviewClient({
 
               <div className="px-5 py-4">
                 {checkIn && checkOut ? (
-                  <div className="flex items-center gap-3">
-                    <div className="text-center">
+                  <div className="flex items-start gap-3">
+                    <div className="min-w-0 flex-1 text-center">
                       <p className="font-display text-[0.6rem] uppercase tracking-widest text-charcoal/40 mb-0.5">Check-in</p>
                       <p className="font-sans text-sm font-medium text-charcoal">{fmt(checkIn)}</p>
+                      {pickupTimeLabel ? (
+                        <p className="mt-1 font-sans text-xs text-charcoal/45 leading-snug">
+                          Pickup from {pickupTimeLabel}
+                        </p>
+                      ) : null}
                     </div>
-                    <div className="flex-1 h-px bg-neutral-200" />
-                    <div className="text-center">
+                    <div className="flex-1 h-px bg-neutral-200 mt-5 shrink-0" />
+                    <div className="min-w-0 flex-1 text-center">
                       <p className="font-display text-[0.6rem] uppercase tracking-widest text-charcoal/40 mb-0.5">Check-out</p>
                       <p className="font-sans text-sm font-medium text-charcoal">{fmt(checkOut)}</p>
+                      {returnTimeLabel ? (
+                        <p className="mt-1 font-sans text-xs text-charcoal/45 leading-snug">
+                          Return by {returnTimeLabel}
+                        </p>
+                      ) : null}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => { setCheckIn(null); setCheckOut(null) }}
-                      className="ml-2 w-6 h-6 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-charcoal/40 hover:text-charcoal transition-colors"
-                      aria-label="Clear dates"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
                   </div>
                 ) : (
                   <button
@@ -226,36 +237,10 @@ export default function RequestReviewClient({
                     checkIn={checkIn}
                     checkOut={checkOut}
                     onDateClick={handleDateClick}
+                    minNights={minNights}
                   />
                 </div>
               )}
-            </div>
-
-            {/* Guests row */}
-            <div className="bg-white border border-neutral-200 rounded-2xl px-5 py-4 flex items-center justify-between shadow-luxury-sm">
-              <div className="flex items-center gap-2.5">
-                <Users className="w-4 h-4 text-charcoal/40" />
-                <span className="font-sans text-sm font-medium text-charcoal">Guests</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setGuests((g) => Math.max(1, g - 1))}
-                  className="w-7 h-7 rounded-full border border-neutral-200 flex items-center justify-center font-sans text-base text-charcoal/60 hover:bg-neutral-50 transition-colors"
-                  aria-label="Decrease guests"
-                >
-                  –
-                </button>
-                <span className="font-sans text-sm font-semibold text-charcoal w-4 text-center">{guests}</span>
-                <button
-                  type="button"
-                  onClick={() => setGuests((g) => Math.min(van.sleeps, g + 1))}
-                  className="w-7 h-7 rounded-full border border-neutral-200 flex items-center justify-center font-sans text-base text-charcoal/60 hover:bg-neutral-50 transition-colors"
-                  aria-label="Increase guests"
-                >
-                  +
-                </button>
-              </div>
             </div>
 
             {/* Location / pickup */}
@@ -264,8 +249,30 @@ export default function RequestReviewClient({
                 <MapPin className="w-4 h-4 text-charcoal/40" />
                 <span className="font-sans text-sm font-medium text-charcoal">Pickup location</span>
               </div>
-              <p className="font-sans text-sm text-charcoal/60">{van.location}</p>
+              <p className="font-sans text-sm text-charcoal/60">{vanPickupDisplay(van)}</p>
               <p className="font-sans text-xs text-charcoal/35 mt-1">Exact address provided after booking confirmation.</p>
+              {showProcedure ? (
+                <div className="mt-4 border-t border-neutral-100 pt-4">
+                  <p className="font-display text-[0.6rem] font-bold uppercase tracking-widest text-charcoal/40 mb-2">
+                    Pickup procedure
+                  </p>
+                  {procedureBody ? (
+                    <p className="font-sans text-sm text-charcoal/70 leading-relaxed whitespace-pre-wrap">
+                      {procedureBody}
+                    </p>
+                  ) : null}
+                  {procedureDoc ? (
+                    <a
+                      href={procedureDoc}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`font-sans text-sm font-medium text-forest-700 hover:text-forest-600 underline ${procedureBody ? 'mt-3 inline-block' : 'inline-block'}`}
+                    >
+                      View pickup & drop-off document
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
 
           </div>
@@ -282,8 +289,10 @@ export default function RequestReviewClient({
                 {hasDates ? (
                   <>
                     <div className="flex justify-between font-sans text-sm text-charcoal/70">
-                      <span>${van.pricePerNight.toLocaleString()} × {nights} night{nights !== 1 ? 's' : ''}</span>
-                      <span>${nightsTotal.toLocaleString()}</span>
+                      <span>${van.pricePerNight.toLocaleString()}</span>
+                      <span>
+                        × {nights} night{nights !== 1 ? 's' : ''}
+                      </span>
                     </div>
                     <div className="flex justify-between font-sans text-sm text-charcoal/70">
                       <span>Fees</span>
@@ -300,12 +309,35 @@ export default function RequestReviewClient({
                       </span>
                     </div>
 
-                    <div className="border-t border-neutral-100 pt-3 space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => setPriceBreakdownOpen((o) => !o)}
+                      className="mt-2 flex w-full items-center gap-1.5 pl-3 text-left font-sans text-sm text-charcoal/55 hover:text-charcoal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest-500/30 rounded-md py-0.5 -ml-0.5"
+                      aria-expanded={priceBreakdownOpen}
+                      aria-controls="request-price-breakdown"
+                      id="request-price-breakdown-toggle"
+                    >
+                      <span
+                        className={`inline-flex w-3 shrink-0 justify-center font-sans text-xs text-charcoal/40 transition-transform duration-200 ${priceBreakdownOpen ? 'rotate-90' : ''}`}
+                        aria-hidden
+                      >
+                        {'>'}
+                      </span>
+                      <span className="font-medium">Breakdown</span>
+                    </button>
+
+                    <div
+                      id="request-price-breakdown"
+                      role="region"
+                      aria-labelledby="request-price-breakdown-toggle"
+                      hidden={!priceBreakdownOpen}
+                      className="border-t border-neutral-100 pt-3 space-y-2"
+                    >
                       <p className="pl-2 font-display text-[0.65rem] font-bold uppercase tracking-widest text-charcoal/45">
                         Due today:
                       </p>
                       <div className="flex justify-between items-start gap-3 pl-5 font-sans text-sm text-forest-800">
-                        <ReservationFeeLabelWithTooltip />
+                        <ReservationFeeLabelWithTooltip cancellationPolicy={van.cancellationPolicy} />
                         <span className="shrink-0 tabular-nums">
                           $
                           {(reservationFeeC / 100).toLocaleString(undefined, {
@@ -314,33 +346,33 @@ export default function RequestReviewClient({
                           })}
                         </span>
                       </div>
-                    </div>
 
-                    <div className="space-y-2 pt-1">
-                      <p className="pl-2 font-display text-[0.65rem] font-bold uppercase tracking-widest text-charcoal/45">
-                        Due at pickup:
-                      </p>
-                      <div className="flex justify-between pl-5 font-sans text-sm text-forest-800">
-                        <span>Remaining trip balance</span>
-                        <span className="shrink-0 tabular-nums">
-                          $
-                          {(remainingTripCents / 100).toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </span>
-                      </div>
-                      {securityDepositDollars !== null && (
+                      <div className="space-y-2 pt-1">
+                        <p className="pl-2 font-display text-[0.65rem] font-bold uppercase tracking-widest text-charcoal/45">
+                          Due at pickup:
+                        </p>
                         <div className="flex justify-between pl-5 font-sans text-sm text-forest-800">
-                          <span>Vehicle security deposit</span>
-                          <span className="shrink-0 tabular-nums">${securityDepositDollars.toLocaleString()}</span>
+                          <span>Remaining trip balance</span>
+                          <span className="shrink-0 tabular-nums">
+                            $
+                            {(remainingTripCents / 100).toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </span>
                         </div>
-                      )}
-                    </div>
+                        {securityDepositDollars !== null && (
+                          <div className="flex justify-between pl-5 font-sans text-sm text-charcoal italic">
+                            <span>Security deposit</span>
+                            <span className="shrink-0 tabular-nums">${securityDepositDollars.toLocaleString()}</span>
+                          </div>
+                        )}
+                      </div>
 
-                    <p className="font-sans text-[0.7rem] text-charcoal/35">
-                      Remaining balance and security deposit are collected at pickup.
-                    </p>
+                      <p className="font-sans text-[0.7rem] text-charcoal/35">
+                        Remaining balance and security deposit are collected at pickup.
+                      </p>
+                    </div>
                   </>
                 ) : (
                   <p className="font-sans text-sm text-charcoal/40">
@@ -373,7 +405,7 @@ export default function RequestReviewClient({
                 </p>
 
                 <p className="font-sans text-center text-[0.65rem] text-charcoal/35 leading-snug px-1">
-                  {RESERVATION_FEE_REFUND_COPY}
+                  {reservationFeeRefundPolicyCopy(van.cancellationPolicy)}
                 </p>
               </div>
             </div>

@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { ChevronDown, MapPin, Calendar, Users, Search } from 'lucide-react'
 import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import HeroDatePopover from '@/components/home/HeroDatePopover'
+import { heroFleetQueriesEquivalent, serializeHeroFleetSearch } from '@/lib/home-fleet-search-url'
 
 const fadeUpVariant = {
   hidden: { opacity: 0, y: 30 },
@@ -21,14 +22,14 @@ const fadeUpVariant = {
   }),
 }
 
-const locationOptions = [
-  'Denver, CO',
-  'Salt Lake City, UT',
-  'Bozeman, MT',
-  'Aspen, CO',
-  'Portland, OR',
-  'Seattle, WA',
-]
+type HeroProps = {
+  /** Distinct pickup labels from published listings (server-derived). */
+  pickupLocations: string[]
+  initialLocation?: string
+  initialCheckIn?: string
+  initialCheckOut?: string
+  initialGuests?: number
+}
 
 /** Hero headline: cream bookends, larger gold italic center line */
 const HERO_HEADLINE_BASE = 'clamp(1.85rem, 4.5vw, 3.35rem)'
@@ -44,13 +45,20 @@ function formatDateLabel(iso: string): string {
   }
 }
 
-export default function Hero() {
+export default function Hero({
+  pickupLocations,
+  initialLocation = '',
+  initialCheckIn = '',
+  initialCheckOut = '',
+  initialGuests = 2,
+}: HeroProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
-  const [location, setLocation] = useState('')
-  const [checkIn, setCheckIn] = useState('')
-  const [checkOut, setCheckOut] = useState('')
-  const [guests, setGuests] = useState(2)
+  const [location, setLocation] = useState(initialLocation)
+  const [checkIn, setCheckIn] = useState(initialCheckIn)
+  const [checkOut, setCheckOut] = useState(initialCheckOut)
+  const [guests, setGuests] = useState(initialGuests)
   const [datePopover, setDatePopover] = useState<'checkIn' | 'checkOut' | null>(null)
   const pickUpDateCellRef = useRef<HTMLDivElement>(null)
   const returnDateCellRef = useRef<HTMLDivElement>(null)
@@ -59,13 +67,28 @@ export default function Hero() {
     setMounted(true)
   }, [])
 
+  useEffect(() => {
+    setLocation(initialLocation)
+    setCheckIn(initialCheckIn)
+    setCheckOut(initialCheckOut)
+    setGuests(initialGuests)
+  }, [initialLocation, initialCheckIn, initialCheckOut, initialGuests])
+
+  useEffect(() => {
+    if (!mounted) return
+    const qs = serializeHeroFleetSearch({ location, checkIn, checkOut, guests })
+    if (typeof window === 'undefined') return
+    const current = window.location.search.startsWith('?')
+      ? window.location.search.slice(1)
+      : window.location.search
+    if (heroFleetQueriesEquivalent(qs, current)) return
+    const base = pathname || '/'
+    router.replace(qs ? `${base}?${qs}` : base, { scroll: false })
+  }, [mounted, location, checkIn, checkOut, guests, pathname, router])
+
   const handleSearch = () => {
-    const params = new URLSearchParams()
-    if (location) params.set('listing', location)
-    if (checkIn) params.set('checkIn', checkIn)
-    if (checkOut) params.set('checkOut', checkOut)
-    params.set('guests', String(guests))
-    router.push(`/booking?${params.toString()}`)
+    const qs = serializeHeroFleetSearch({ location, checkIn, checkOut, guests })
+    router.push(qs ? `/fleet?${qs}` : '/fleet')
   }
 
   if (!mounted) return null
@@ -142,10 +165,10 @@ export default function Hero() {
       >
         <div className="max-w-5xl mx-auto">
           <div className="glass-card rounded-2xl shadow-luxury ring-1 ring-black/10 overflow-hidden border border-cream-200/30">
-            {/* Mobile: 2×2 (location | guests / pick up | return) + full-width search; md+: horizontal bar */}
+            {/* Mobile: location | pick up & return | guests | search; md+: horizontal bar with guests */}
             <div className="grid grid-cols-2 md:grid-cols-4 md:divide-x md:divide-cream-300/20">
               {/* Pickup Location */}
-              <div className="flex max-md:col-start-1 max-md:row-start-1 max-md:border-r max-md:border-b border-cream-300/20 items-center gap-3 px-4 py-3.5 sm:px-6 sm:py-5 md:border-0 md:py-5">
+              <div className="flex max-md:col-span-2 max-md:row-start-1 max-md:border-b border-cream-300/20 items-center gap-3 px-4 py-3.5 sm:px-6 sm:py-5 md:border-0 md:py-5">
                 <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gold-500 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <label className="font-display text-[0.65rem] md:text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-1 md:mb-0.5">
@@ -157,7 +180,7 @@ export default function Hero() {
                     className="w-full bg-transparent font-sans text-base md:text-sm text-charcoal font-medium focus:outline-none cursor-pointer appearance-none min-h-[44px] md:min-h-0 py-0.5 md:py-0"
                   >
                     <option value="">Select a location</option>
-                    {locationOptions.map((loc) => (
+                    {pickupLocations.map((loc) => (
                       <option key={loc} value={loc}>{loc}</option>
                     ))}
                   </select>
@@ -214,9 +237,30 @@ export default function Hero() {
                 />
               </div>
 
-              {/* Guests + Search: `contents` on mobile so guests + button are separate grid cells; md:flex = one segment */}
+              {/* Guests — mobile row (desktop uses segment below) */}
+              <div className="flex max-md:col-span-2 max-md:row-start-3 max-md:border-b border-cream-300/20 items-center gap-3 px-4 py-3.5 sm:px-6 sm:py-5 md:hidden min-h-[3.25rem]">
+                <Users className="w-4 h-4 shrink-0 text-gold-500 sm:h-5 sm:w-5" />
+                <div className="min-w-0 flex-1">
+                  <label className="font-display text-[0.65rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-1">
+                    Guests
+                  </label>
+                  <select
+                    value={guests}
+                    onChange={(e) => setGuests(Number(e.target.value))}
+                    className="w-full bg-transparent font-sans text-base text-charcoal font-medium focus:outline-none cursor-pointer appearance-none min-h-[44px] py-0.5"
+                  >
+                    {[1, 2, 3, 4].map((n) => (
+                      <option key={n} value={n}>
+                        {n} {n === 1 ? 'Guest' : 'Guests'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Guests (md+ only) + Search: `contents` on mobile so search is a grid cell; md:flex = one segment */}
               <div className="contents md:flex md:min-h-[4.25rem] md:flex-row md:items-center md:gap-3 md:px-6 md:py-5">
-                <div className="flex max-md:col-start-2 max-md:row-start-1 max-md:border-b border-cream-300/20 min-h-[3.25rem] min-w-0 flex-1 items-center gap-3 px-4 py-3.5 sm:px-6 sm:py-5 md:min-h-0 md:border-0 md:px-0 md:py-0">
+                <div className="hidden min-w-0 flex-1 items-center gap-3 border-cream-300/20 md:flex md:border-0 md:py-0">
                   <Users className="w-4 h-4 sm:w-5 sm:h-5 text-gold-500 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
                     <label className="font-display text-[0.65rem] md:text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-1 md:mb-0.5">
@@ -237,7 +281,7 @@ export default function Hero() {
                   type="button"
                   onClick={handleSearch}
                   aria-label="Search"
-                  className="max-md:col-span-2 max-md:row-start-3 flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-sm bg-gold-400 px-4 shadow-gold transition-colors duration-200 hover:bg-gold-300 md:ml-1 md:h-11 md:w-11 md:px-0"
+                  className="max-md:col-span-2 max-md:row-start-4 flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-sm bg-gold-400 px-4 shadow-gold transition-colors duration-200 hover:bg-gold-300 md:ml-1 md:h-11 md:w-11 md:px-0"
                 >
                   <Search className="h-4 w-4 text-forest-950 sm:h-5 sm:w-5" strokeWidth={2} />
                   <span className="font-display text-sm font-bold uppercase tracking-[0.12em] text-forest-950 md:hidden">

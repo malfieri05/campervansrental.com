@@ -164,7 +164,15 @@ export default async function HostBookingsPage({
       }
     }
 
-    query = query.order('start_date', { ascending: false })
+    if (activeStatus === 'confirmed') {
+      // Upcoming bookings should read chronologically (nearest first).
+      query = query.order('start_date', { ascending: true })
+    } else if (activeStatus === 'completed') {
+      // Completed bookings should show the most recently finished first.
+      query = query.order('end_date', { ascending: false })
+    } else {
+      query = query.order('start_date', { ascending: false })
+    }
 
     const { data } = await query
     reservations = (data ?? []) as unknown as ReservationRow[]
@@ -221,7 +229,7 @@ export default async function HostBookingsPage({
                       )}
                     </div>
 
-                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-x-10">
                       <div className="flex items-start gap-2">
                         <User className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" />
                         <div>
@@ -236,7 +244,7 @@ export default async function HostBookingsPage({
                         <CalendarRange className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" />
                         <div>
                           <p className="text-[0.65rem] font-medium uppercase tracking-wide text-neutral-400">Dates</p>
-                          <p className="mt-0.5 text-sm font-semibold text-neutral-800">
+                          <p className="mt-0.5 text-sm font-semibold text-neutral-800 whitespace-nowrap">
                             {formatDate(r.start_date)} – {formatDate(r.end_date)}
                           </p>
                           <p className="text-xs text-neutral-400">
@@ -245,7 +253,7 @@ export default async function HostBookingsPage({
                           </p>
                         </div>
                       </div>
-                      <div>
+                      <div className="sm:justify-self-end">
                         <p className="text-[0.65rem] font-medium uppercase tracking-wide text-neutral-400">Total</p>
                         <p className="mt-0.5 text-sm font-semibold text-neutral-800">
                           {formatMoney(r.total_cents)}

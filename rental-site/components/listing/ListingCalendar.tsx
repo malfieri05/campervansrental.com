@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  addDays,
   addMonths,
   differenceInCalendarDays,
   eachDayOfInterval,
@@ -8,6 +9,7 @@ import {
   endOfWeek,
   format,
   isSameMonth,
+  parseISO,
   startOfMonth,
   startOfWeek,
 } from 'date-fns'
@@ -31,14 +33,22 @@ type Props = {
   /**
    * Wide overlay (e.g. listing sidebar popover): always show two months side-by-side
    * with comfortable cell sizing — avoids squashed grids inside narrow columns.
+   * inline: wraps both months in a single styled card.
+   * overlay: renders months without a wrapper (the portal container is the card).
    */
   layout?: 'inline' | 'overlay'
+  /** Minimum nights required for this listing — drives hover preview snapping. */
+  minNights?: number
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 
 function dayKey(d: Date) {
   return format(d, 'yyyy-MM-dd')
+}
+
+function addDaysKey(isoDay: string, days: number): string {
+  return format(addDays(parseISO(`${isoDay}T12:00:00`), days), 'yyyy-MM-dd')
 }
 
 function isDayInHalfOpenBlock(day: Date, start: string, endExclusive: string) {
@@ -49,10 +59,9 @@ function isDayInHalfOpenBlock(day: Date, start: string, endExclusive: string) {
   return t.getTime() >= ds && t.getTime() < de
 }
 
-function blockStyle(type: BlockRange['type']) {
-  if (type === 'confirmed_reservation') return 'bg-forest-800 text-cream-100'
-  return 'bg-gold-200/80 text-forest-900'
-}
+/** Unavailable nights: Outdoorsy-style muted + strikethrough (no filled “pill”). */
+const UNAVAILABLE_DAY =
+  'text-charcoal/40 line-through decoration-charcoal/35 bg-transparent border-transparent shadow-none'
 
 function monthGridDays(monthStart: Date) {
   const start = startOfWeek(startOfMonth(monthStart))
@@ -60,7 +69,11 @@ function monthGridDays(monthStart: Date) {
   return eachDayOfInterval({ start, end })
 }
 
-function isKeyInRange(key: string, checkIn: string | null | undefined, checkOut: string | null | undefined) {
+function isKeyInRange(
+  key: string,
+  checkIn: string | null | undefined,
+  checkOut: string | null | undefined
+) {
   if (!checkIn || !checkOut) return false
   return key > checkIn && key < checkOut
 }
@@ -70,14 +83,14 @@ type MonthPaneProps = {
   gridDays: Date[]
   blockedLookup: Map<string, BlockRange['type']>
   readOnly: boolean
-  /** Host selection */
   selStart: string | null
   onDayClick: (d: Date) => void
-  /** Renter selection */
+  onDayHover: (key: string | null) => void
   checkIn?: string | null
   checkOut?: string | null
-  /** yyyy-MM-dd local today — disables past nights for renters */
   todayKey: string
+  /** Inclusive upper bound of the hover preview range; null means no preview. */
+  hoverPreviewEnd: string | null
   leadingNav?: ReactNode
   trailingNav?: ReactNode
 }
@@ -89,8 +102,10 @@ function MonthPane({
   readOnly,
   selStart,
   onDayClick,
+  onDayHover,
   checkIn,
   checkOut,
+  hoverPreviewEnd,
   leadingNav,
   trailingNav,
   todayKey,
@@ -100,7 +115,7 @@ function MonthPane({
   const pickingCheckout = renterMode && Boolean(checkIn && !checkOut)
 
   return (
-    <div className="rounded-xl border border-cream-300/60 bg-cream-50/90 p-3 sm:p-4 shadow-luxury-sm">
+    <div className="min-w-0">
       <div className="grid grid-cols-[2.5rem_1fr_2.5rem] items-center gap-1 mb-3">
         <div className="flex justify-start">{leadingNav ?? placeholder}</div>
         <span className="font-display text-[0.7rem] sm:text-xs font-bold uppercase tracking-[0.12em] text-forest-800 text-center leading-tight">
@@ -109,7 +124,7 @@ function MonthPane({
         <div className="flex justify-end">{trailingNav ?? placeholder}</div>
       </div>
 
-      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-center font-display text-[0.55rem] sm:text-[0.65rem] uppercase tracking-wide text-charcoal/40 mb-2">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-center font-display text-[0.55rem] sm:text-[0.65rem] uppercase tracking-wide text-charcoal mb-2">
         {WEEKDAYS.map((d) => (
           <div key={d} className="py-0.5">
             {d}
@@ -128,15 +143,44 @@ function MonthPane({
           const isCheckOut = renterMode && checkOut === key
           const inRange = renterMode && isKeyInRange(key, checkIn, checkOut)
 
+          // Hover preview: active while picking checkout, shows min-nights floor or cursor extent
+          const inHoverPreview =
+            pickingCheckout &&
+            hoverPreviewEnd != null &&
+            checkIn != null &&
+            key > checkIn &&
+            key <= hoverPreviewEnd
+
           // Host mode (legacy)
           const selected = !renterMode && selStart === key
 
           const isDisabled = readOnly && !renterMode
           const isPastDay = renterMode && key < todayKey
           const isBlockedInRenterMode = renterMode && Boolean(blocked)
-          /** Checkout can land on a calendar day that starts a block; range overlap is validated in `resolveListingDateClick`. */
           const renterDayDisabled =
             renterMode && (isPastDay || (!pickingCheckout && isBlockedInRenterMode))
+
+          const baseCell =
+            'min-h-[2.35rem] sm:min-h-[2.5rem] rounded-lg text-xs font-sans flex items-center justify-center transition-all duration-100 relative'
+
+          let surface = ''
+          if (isCheckIn || isCheckOut) {
+            surface = 'bg-gold-400 text-forest-950 font-bold shadow-gold z-10'
+          } else if (inRange && !blocked) {
+            surface = 'bg-gold-100 text-charcoal'
+          } else if (inRange && blocked) {
+            surface = UNAVAILABLE_DAY
+          } else if (inHoverPreview && !blocked) {
+            surface = 'bg-gold-200/55 text-charcoal'
+          } else if (inHoverPreview && blocked) {
+            surface = UNAVAILABLE_DAY
+          } else if (blocked) {
+            surface = UNAVAILABLE_DAY
+          } else if (inMonth) {
+            surface = 'text-charcoal bg-cream-100/90 border border-cream-200/50 hover:bg-cream-200/70'
+          } else {
+            surface = 'text-charcoal/25 bg-cream-100/40 border border-cream-200/30'
+          }
 
           return (
             <button
@@ -144,6 +188,8 @@ function MonthPane({
               type="button"
               disabled={isDisabled || renterDayDisabled}
               onClick={() => onDayClick(d)}
+              onMouseEnter={() => pickingCheckout && onDayHover(key)}
+              onMouseLeave={() => pickingCheckout && onDayHover(null)}
               title={
                 isPastDay
                   ? 'Cannot select past dates'
@@ -152,31 +198,11 @@ function MonthPane({
                     : undefined
               }
               className={[
-                'min-h-[2.35rem] sm:min-h-[2.5rem] rounded-lg text-xs font-sans flex items-center justify-center transition-all duration-150 relative',
-                inMonth ? 'text-charcoal' : 'text-charcoal/25',
-                // Renter: check-in / check-out endpoints
-                isCheckIn || isCheckOut
-                  ? 'bg-gold-400 text-forest-950 font-bold shadow-gold z-10'
-                  : '',
-                // Renter: in-range fill
-                inRange && !blocked
-                  ? 'bg-gold-100 text-charcoal rounded-none'
-                  : '',
-                inRange && blocked
-                  ? 'bg-gold-100/50 text-charcoal/40 rounded-none line-through'
-                  : '',
-                // Blocked day (no renter selection active yet)
-                !isCheckIn && !isCheckOut && !inRange && blocked
-                  ? `${blockStyle(blocked)} font-medium`
-                  : '',
-                // Unselected normal day
-                !isCheckIn && !isCheckOut && !inRange && !blocked
-                  ? 'bg-cream-100/90 border border-cream-200/50 hover:bg-cream-200/70'
-                  : '',
-                // Host selection
+                baseCell,
+                surface,
                 selected ? 'ring-2 ring-gold-500' : '',
                 isBlockedInRenterMode && !isCheckIn && !isCheckOut
-                  ? 'opacity-40 cursor-not-allowed'
+                  ? 'cursor-not-allowed'
                   : '',
                 isPastDay && !isCheckIn && !isCheckOut ? 'opacity-35 cursor-not-allowed' : '',
                 isDisabled || renterDayDisabled ? 'cursor-default' : 'cursor-pointer',
@@ -200,13 +226,27 @@ export default function ListingCalendar({
   onDateClick,
   className = '',
   layout = 'inline',
+  minNights = 1,
 }: Props) {
   const [cursor, setCursor] = useState(() => startOfMonth(new Date()))
-  /** Host-mode internal selection start */
   const [selStart, setSelStart] = useState<string | null>(null)
+  const [hoverKey, setHoverKey] = useState<string | null>(null)
 
   const renterMode = checkIn !== undefined
   const todayKey = todayDateKey()
+  const pickingCheckout = renterMode && Boolean(checkIn && !checkOut)
+
+  /**
+   * Hover preview end key:
+   * - Always at least checkIn + minNights when picking checkout (shows the minimum floor immediately).
+   * - Extends to hoverKey when the cursor moves beyond that floor.
+   */
+  const hoverPreviewEnd = useMemo((): string | null => {
+    if (!pickingCheckout || !checkIn) return null
+    const minCheckout = addDaysKey(checkIn, minNights)
+    if (!hoverKey || hoverKey <= checkIn) return minCheckout
+    return hoverKey >= minCheckout ? hoverKey : minCheckout
+  }, [pickingCheckout, checkIn, hoverKey, minNights])
 
   const secondMonth = useMemo(() => addMonths(cursor, 1), [cursor])
   const gridDaysLeft = useMemo(() => monthGridDays(cursor), [cursor])
@@ -232,12 +272,12 @@ export default function ListingCalendar({
 
   const onDayClick = (d: Date) => {
     const key = dayKey(d)
-    const pickingCheckout = Boolean(checkIn && !checkOut)
+    const pickingCheckoutNow = Boolean(checkIn && !checkOut)
 
     // Renter mode: delegate all state to parent
     if (renterMode && onDateClick) {
       if (key < todayKey) return
-      if (!pickingCheckout && blockedLookup.get(key)) return
+      if (!pickingCheckoutNow && blockedLookup.get(key)) return
       onDateClick(key)
       return
     }
@@ -264,57 +304,68 @@ export default function ListingCalendar({
   const navBtnClass =
     'inline-flex w-9 h-9 items-center justify-center rounded-lg border border-cream-300/70 bg-cream-100/80 text-charcoal hover:bg-cream-200/80 hover:border-cream-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400'
 
-  const dualMonthClass =
-    layout === 'overlay'
-      ? 'grid grid-cols-1 min-[520px]:grid-cols-2 gap-3 sm:gap-4'
-      : 'grid grid-cols-1 md:grid-cols-2 gap-4'
+  const sharedMonthProps = {
+    blockedLookup,
+    readOnly,
+    selStart,
+    onDayClick,
+    onDayHover: setHoverKey,
+    checkIn,
+    checkOut,
+    todayKey,
+    hoverPreviewEnd,
+  }
+
+  const monthsGrid = (
+    <div
+      className={
+        layout === 'overlay'
+          ? 'grid grid-cols-1 min-[520px]:grid-cols-2 gap-4 sm:gap-6'
+          : 'grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6'
+      }
+    >
+      <MonthPane
+        {...sharedMonthProps}
+        monthAnchor={cursor}
+        gridDays={gridDaysLeft}
+        leadingNav={
+          <button
+            type="button"
+            onClick={() => setCursor((c) => addMonths(c, -1))}
+            className={navBtnClass}
+            aria-label="Previous months"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        }
+      />
+      <MonthPane
+        {...sharedMonthProps}
+        monthAnchor={secondMonth}
+        gridDays={gridDaysRight}
+        trailingNav={
+          <button
+            type="button"
+            onClick={() => setCursor((c) => addMonths(c, 1))}
+            className={navBtnClass}
+            aria-label="Next months"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        }
+      />
+    </div>
+  )
 
   return (
     <div className={className}>
-      <div className={dualMonthClass}>
-        <MonthPane
-          monthAnchor={cursor}
-          gridDays={gridDaysLeft}
-          blockedLookup={blockedLookup}
-          readOnly={readOnly}
-          selStart={selStart}
-          onDayClick={onDayClick}
-          checkIn={checkIn}
-          checkOut={checkOut}
-          todayKey={todayKey}
-          leadingNav={
-            <button
-              type="button"
-              onClick={() => setCursor((c) => addMonths(c, -1))}
-              className={navBtnClass}
-              aria-label="Previous months"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-          }
-        />
-        <MonthPane
-          monthAnchor={secondMonth}
-          gridDays={gridDaysRight}
-          blockedLookup={blockedLookup}
-          readOnly={readOnly}
-          selStart={selStart}
-          onDayClick={onDayClick}
-          checkIn={checkIn}
-          checkOut={checkOut}
-          todayKey={todayKey}
-          trailingNav={
-            <button
-              type="button"
-              onClick={() => setCursor((c) => addMonths(c, 1))}
-              className={navBtnClass}
-              aria-label="Next months"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          }
-        />
-      </div>
+      {layout === 'inline' ? (
+        <div className="rounded-xl border border-cream-300/60 bg-cream-50/90 p-3 sm:p-5 shadow-luxury-sm">
+          {monthsGrid}
+        </div>
+      ) : (
+        monthsGrid
+      )}
 
       {!readOnly && !renterMode && (
         <p className="mt-4 font-sans text-xs text-charcoal/45">

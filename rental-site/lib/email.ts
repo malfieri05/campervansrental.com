@@ -6,7 +6,7 @@ import { Resend } from 'resend'
 import { siteUrl } from '@/lib/env'
 import { getCategoryLabel } from '@/lib/data'
 import type { Van } from '@/types'
-import { RESERVATION_FEE_REFUND_COPY } from '@/lib/booking-pricing'
+import { reservationFeeRefundPolicyCopy } from '@/lib/booking-pricing'
 
 export type BookingConfirmationPayload = {
   to: string
@@ -26,6 +26,8 @@ export type BookingConfirmationPayload = {
   feesCents: number
   totalCents: number
   reservationFeePaidCents: number
+  /** listings.cancellation_policy — drives reservation-fee refund copy */
+  cancellationPolicy?: string | null
 }
 
 function escapeHtml(s: string): string {
@@ -87,8 +89,10 @@ export async function sendBookingConfirmationEmail(
     feesCents,
     totalCents,
     reservationFeePaidCents,
+    cancellationPolicy,
   } = payload
 
+  const feePolicyCopy = reservationFeeRefundPolicyCopy(cancellationPolicy)
   const guestName = [guestFirstName, guestLastName].filter(Boolean).join(' ') || 'Guest'
   const categoryLabel = getCategoryLabel(listingCategory as Van['category'])
   const listingUrl = `${siteUrl()}/listings/${listingSlug}`
@@ -123,7 +127,7 @@ export async function sendBookingConfirmationEmail(
     `Email: ${to}`,
     `Phone: ${guestPhone}`,
     '',
-    `Reservation fee policy: ${RESERVATION_FEE_REFUND_COPY}`,
+    `Reservation fee policy: ${feePolicyCopy}`,
     '',
     'We’ll follow up with any next steps before your trip. If you have questions, reply to this email.',
     '',
@@ -170,7 +174,7 @@ export async function sendBookingConfirmationEmail(
               </p>
               <p style="margin:0 0 8px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#a67c2d;font-weight:600;">Your contact info</p>
               <p style="margin:0 0 20px;font-size:13px;line-height:1.55;color:#444;">${e(to)}<br/>${e(guestPhone)}</p>
-              <p style="margin:0 0 16px;font-size:12px;line-height:1.5;color:#666;border-left:3px solid #d4b87a;padding-left:12px;">${e(RESERVATION_FEE_REFUND_COPY)}</p>
+              <p style="margin:0 0 16px;font-size:12px;line-height:1.5;color:#666;border-left:3px solid #d4b87a;padding-left:12px;">${e(feePolicyCopy)}</p>
               <p style="margin:0;font-size:13px;line-height:1.55;color:#333;">We’ll follow up with any next steps before your trip. Questions? Reply to this email.</p>
               <p style="margin:20px 0 0;font-size:13px;color:#888;">— Camper Vans Rental</p>
             </td>

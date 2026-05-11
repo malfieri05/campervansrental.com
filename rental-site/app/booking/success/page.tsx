@@ -32,7 +32,7 @@ export default async function BookingSuccessPage({
   searchParams: { session_id?: string; openAgreement?: string }
 }) {
   const sessionId = searchParams.session_id
-  if (!sessionId) redirect('/booking')
+  if (!sessionId) redirect('/fleet')
 
   const openAgreementParam = searchParams.openAgreement
   const initialWorkspaceOpen =
@@ -67,6 +67,7 @@ export default async function BookingSuccessPage({
             start_date,
             end_date,
             guests,
+            pickup_location,
             total_cents,
             deposit_cents,
             status,
@@ -125,7 +126,10 @@ export default async function BookingSuccessPage({
             title:               listing.title,
             slug:                listing.slug,
             category:            listing.category,
-            location:            listing.location_label?.trim() || 'See listing',
+            location:
+              (typeof resv.pickup_location === 'string' && resv.pickup_location.trim()) ||
+              listing.location_label?.trim() ||
+              'See listing',
             startDate:           start,
             endDate:             end,
             guests:              resv.guests        as number,

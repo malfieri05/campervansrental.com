@@ -54,6 +54,10 @@ export type TripItem = {
   has_signed_agreement: boolean
   /** Stripe Checkout session for returning to the booking success / paperwork flow */
   stripe_checkout_session_id: string | null
+  /** Whether the user already posted a review for this trip. */
+  has_review: boolean
+  /** Whether the trip is eligible for a review right now (completed + in 48h window + no existing review). */
+  review_eligible: boolean
 }
 
 type Tab = 'upcoming' | 'previous'
@@ -522,6 +526,26 @@ function TripCard({
                   <ArrowUpRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
+
+              {/* Write a review CTA (previous / completed trips only) */}
+              {trip.review_eligible && (
+                <div className="flex flex-col gap-1.5">
+                  <Link
+                    href={`/listings/${trip.listing_slug}/review?reservation=${trip.id}`}
+                    className="inline-flex items-center justify-center gap-2 rounded-sm bg-gold-400 px-5 py-2.5 font-display text-xs font-bold uppercase tracking-[0.12em] text-forest-950 shadow-gold transition-colors hover:bg-gold-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 w-fit"
+                  >
+                    Write a review
+                  </Link>
+                  <p className="font-sans text-[0.68rem] text-charcoal/40 leading-relaxed">
+                    Reviews can be submitted for 48 hours after your trip ends.
+                  </p>
+                </div>
+              )}
+              {trip.has_review && (
+                <p className="font-sans text-xs text-forest-700 font-medium">
+                  ✓ You reviewed this trip.
+                </p>
+              )}
 
               {/* ── Pricing — visually de-emphasized, at the bottom ── */}
               <div className="border-t border-charcoal/8 pt-4 mt-2">

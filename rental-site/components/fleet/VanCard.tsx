@@ -3,9 +3,11 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useCallback, useState } from 'react'
-import { Star, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import RatingOrNewBadge from '@/components/ui/RatingOrNewBadge'
 import { Van } from '@/types'
 import { getCategoryLabel, formatVanLengthFt } from '@/lib/data'
+import { vanPickupDisplay } from '@/lib/listing-public-pickup'
 
 interface VanCardProps {
   van: Van
@@ -124,7 +126,7 @@ export default function VanCard({ van }: VanCardProps) {
           {van.name}
         </h3>
         <p className="font-sans text-xs text-charcoal/55 mt-0.5 line-clamp-1">{specs}</p>
-        <p className="font-sans text-xs text-charcoal/50">{van.location}</p>
+        <p className="font-sans text-xs text-charcoal/50">{vanPickupDisplay(van)}</p>
 
         {/* Price + rating */}
         <div className="flex items-center justify-between mt-2 pt-2 border-t border-neutral-100">
@@ -134,13 +136,7 @@ export default function VanCard({ van }: VanCardProps) {
             </span>
             <span className="font-sans text-xs text-charcoal/50 ml-0.5">/night</span>
           </div>
-          <div className="flex items-center gap-1">
-            <Star className="w-3.5 h-3.5 text-gold-500 shrink-0" fill="#c4861a" strokeWidth={0} />
-            <span className="font-sans text-xs font-semibold text-charcoal">
-              {van.rating}
-            </span>
-            <span className="font-sans text-xs text-charcoal/45">({van.reviewCount})</span>
-          </div>
+          <RatingOrNewBadge reviewCount={van.reviewCount} rating={van.rating} size="sm" />
         </div>
       </Link>
     </div>

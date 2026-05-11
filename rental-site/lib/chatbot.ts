@@ -6,6 +6,7 @@
 import { embed } from 'ai'
 import { openai } from '@ai-sdk/openai'
 import { createServiceRoleClient } from '@/lib/supabase/server'
+import { pickupAreaFromAddress } from '@/lib/listing-public-pickup'
 
 // ─── Context text ─────────────────────────────────────────────────────────────
 
@@ -22,6 +23,14 @@ export function buildListingContextText(row: Record<string, unknown>): string {
   add('Tagline', row.tagline)
   add('Description', row.description)
   add('Location', row.location_label)
+  add(
+    'Approximate pickup area',
+    pickupAreaFromAddress({
+      address_city: row.address_city as string | null | undefined,
+      address_state: row.address_state as string | null | undefined,
+      address_country: row.address_country as string | null | undefined,
+    })
+  )
   add('Vehicle class', row.vehicle_class)
   add('Year', row.vehicle_year)
   add('Make', row.vehicle_make)

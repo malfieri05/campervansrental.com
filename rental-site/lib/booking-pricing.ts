@@ -17,8 +17,29 @@ export function reservationFeeCents(tripTotalCents: number): number {
   return Math.max(50, raw)
 }
 
-export const RESERVATION_FEE_REFUND_COPY =
-  'The reservation fee is fully refundable if you cancel 28 or more days before your trip start date.'
+export type ListingCancellationPolicy = 'flexible' | 'moderate' | 'strict'
 
-/** Tooltip next to “Reservation fee” (checkout / review summaries). */
-export const RESERVATION_FEE_TOOLTIP = RESERVATION_FEE_REFUND_COPY
+export function normalizeListingCancellationPolicy(
+  raw: string | null | undefined
+): ListingCancellationPolicy {
+  if (raw === 'flexible' || raw === 'moderate' || raw === 'strict') return raw
+  return 'moderate'
+}
+
+/**
+ * How the reservation fee lines up with the host’s Outdoorsy-style cancellation tier
+ * (same windows/percentages as the listing’s Flexible / Moderate / Strict preset).
+ */
+export function reservationFeeRefundPolicyCopy(
+  cancellationPolicy: string | null | undefined
+): string {
+  const p = normalizeListingCancellationPolicy(cancellationPolicy)
+  switch (p) {
+    case 'flexible':
+      return "This host's Flexible policy: full refund of trip amounts you've paid (including this reservation fee) if you cancel 5 or more days before trip start; 75% refund if you cancel within 5 days."
+    case 'moderate':
+      return "This host's Moderate policy: 75% refund if you cancel 7 or more days before trip start; 50% refund if you cancel within 7 days. The reservation fee follows the same schedule."
+    case 'strict':
+      return "This host's Strict policy: 50% refund if you cancel 14 or more days before trip start; no refund of trip payment if you cancel within 14 days (including this reservation fee)."
+  }
+}

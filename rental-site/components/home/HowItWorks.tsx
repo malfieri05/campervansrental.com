@@ -25,7 +25,7 @@ export default function HowItWorks() {
     <section
       id="our-platform"
       ref={sectionRef}
-      className="relative overflow-hidden bg-cream-100 px-6 py-14 sm:py-24 lg:px-10"
+      className="relative overflow-x-hidden bg-cream-100 px-6 py-14 sm:py-24 lg:px-10"
     >
       {/* Soft ambient accents */}
       <div
@@ -70,26 +70,25 @@ export default function HowItWorks() {
             animate={inView ? 'visible' : 'hidden'}
             className="order-2 max-w-xl lg:order-1 lg:max-w-none lg:pr-2"
           >
-            <div className="mb-6 flex gap-3 rounded-xl border border-gold-400/25 bg-white/40 px-5 py-4 backdrop-blur-sm ring-1 ring-black/[0.03]">
+            <div className="relative z-10 mb-5 flex -translate-y-[10%] items-start gap-4 rounded-xl border-2 border-gold-500/50 bg-white/55 px-5 py-5 shadow-luxury-sm backdrop-blur-sm ring-1 ring-gold-400/30 lg:-translate-y-[12%]">
               <Image
                 src="/favicon.png"
                 alt=""
                 width={35}
                 height={35}
-                className="mt-0.5 h-[2.2rem] w-[2.2rem] shrink-0 object-contain"
+                className="mt-1 h-[2.2rem] w-[2.2rem] shrink-0 object-contain opacity-95"
                 aria-hidden
               />
-              <p className="font-display text-[0.6825rem] font-bold uppercase leading-relaxed tracking-[0.18em] text-gold-500">
-                All of the structure and support you get from a major rental marketplace, without a
-                greedy middleman.
+              <p className="max-w-prose font-serif text-lg font-semibold leading-snug tracking-tight text-gold-600 sm:text-xl sm:leading-snug">
+                &ldquo;All of the structure and support of a major rental platform, without a greedy
+                middleman.&rdquo;
               </p>
             </div>
             <p className="font-sans text-base leading-relaxed text-charcoal/65 sm:text-[1.05rem]">
               This platform was built by camping enthusiasts and van owners who were tired of the
               ever-increasing fees alternative platforms forced onto renters and owners. We wanted a
               rental home where hosts keep meaningful control over what guests are charged—so we can
-              deliver the same attentive, full-service experience travelers deserve at a lower total
-              cost.
+              deliver the same attentive, full-service experience travelers deserve at a lower cost.
             </p>
           </motion.div>
 

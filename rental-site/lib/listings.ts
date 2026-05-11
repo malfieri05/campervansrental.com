@@ -2,6 +2,8 @@ import { vans, formatVanLengthFt } from '@/lib/data'
 import { isSupabaseConfigured } from '@/lib/env'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import type { Amenity, FAQ, Van } from '@/types'
+import type { ListingReview } from '@/lib/listing-reviews'
+import { pickupAreaFromAddress } from '@/lib/listing-public-pickup'
 
 type ListingRow = {
   id: string
@@ -12,6 +14,9 @@ type ListingRow = {
   length_label: string | null
   sleeps: number
   location_label: string | null
+  address_city: string | null
+  address_state: string | null
+  address_country: string | null
   category: Van['category']
   price_per_night_cents: number
   cleaning_fee_cents: number
@@ -32,6 +37,7 @@ type ListingRow = {
   pickup_dropoff_rules_text?: string | null
   pickup_dropoff_rules_doc_url?: string | null
   listing_chatbot_enabled?: boolean | null
+  cancellation_policy?: string | null
 }
 
 function mapStaticVan(v: Van): Van {
@@ -64,9 +70,11 @@ function mapRowToVan(row: ListingRow): Van {
     amenities,
     category: row.category,
     available: true,
-    rating: Number(row.rating ?? 4.9),
+    // Use 0 when review_count is 0 so the UI can show "NEW!" instead of a fake rating.
+    rating: (row.review_count ?? 0) > 0 ? Number(row.rating) : 0,
     reviewCount: row.review_count ?? 0,
     location: row.location_label || '',
+    pickupAreaPublic: pickupAreaFromAddress(row),
     cleaningFeeCents: row.cleaning_fee_cents,
     insuranceFeeCents: row.insurance_fee_cents,
     minNights: row.min_nights ?? 1,
@@ -79,6 +87,12 @@ function mapRowToVan(row: ListingRow): Van {
     pickupDropoffRulesText: row.pickup_dropoff_rules_text ?? null,
     pickupDropoffRulesDocUrl: row.pickup_dropoff_rules_doc_url ?? null,
     listingChatbotEnabled: Boolean(row.listing_chatbot_enabled),
+    cancellationPolicy:
+      row.cancellation_policy === 'flexible' ||
+      row.cancellation_policy === 'moderate' ||
+      row.cancellation_policy === 'strict'
+        ? row.cancellation_policy
+        : null,
   }
 }
 
@@ -105,6 +119,9 @@ export async function getPublishedListings(): Promise<Van[]> {
       length_label,
       sleeps,
       location_label,
+      address_city,
+      address_state,
+      address_country,
       category,
       price_per_night_cents,
       cleaning_fee_cents,
@@ -123,6 +140,7 @@ export async function getPublishedListings(): Promise<Van[]> {
       pickup_dropoff_rules_text,
       pickup_dropoff_rules_doc_url,
       listing_chatbot_enabled,
+      cancellation_policy,
       listing_images (url, sort_order)
     `
       )
@@ -164,6 +182,9 @@ export async function getPublishedListingBySlug(slug: string): Promise<Van | nul
       length_label,
       sleeps,
       location_label,
+      address_city,
+      address_state,
+      address_country,
       category,
       price_per_night_cents,
       cleaning_fee_cents,
@@ -182,6 +203,7 @@ export async function getPublishedListingBySlug(slug: string): Promise<Van | nul
       pickup_dropoff_rules_text,
       pickup_dropoff_rules_doc_url,
       listing_chatbot_enabled,
+      cancellation_policy,
       listing_images (url, sort_order)
     `
       )
@@ -200,6 +222,52 @@ export async function getPublishedListingBySlug(slug: string): Promise<Van | nul
     return v ? mapStaticVan(v) : null
   }
 }
+
+/** Fetch all reviews for a listing, newest first. Returns [] when Supabase is not configured. */
+export async function getListingReviews(listingId: string): Promise<ListingReview[]> {
+  if (!isSupabaseConfigured()) return []
+  try {
+    const supabase = await createServerSupabaseClient()
+    if (!supabase) return []
+
+    const { data, error } = await supabase
+      .from('listing_reviews')
+      .select(
+        `
+        id,
+        listing_id,
+        reservation_id,
+        author_id,
+        rating,
+        body,
+        created_at,
+        profiles ( display_name )
+      `
+      )
+      .eq('listing_id', listingId)
+      .order('created_at', { ascending: false })
+
+    if (error || !data) return []
+
+    return data.map((row) => {
+      const profiles = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
+      return {
+        id: row.id as string,
+        listing_id: row.listing_id as string,
+        reservation_id: row.reservation_id as string,
+        author_id: row.author_id as string,
+        author_name: (profiles as { display_name: string | null } | null)?.display_name ?? null,
+        rating: Number(row.rating),
+        body: (row.body as string | null) ?? null,
+        created_at: row.created_at as string,
+      }
+    })
+  } catch {
+    return []
+  }
+}
+
+export { effectivePickupLabels, uniquePublishedPickupLabels } from '@/lib/home-fleet-search-url'
 
 export async function getListingRowIdBySlugForOwner(
   slug: string,

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { differenceInCalendarDays, parseISO } from 'date-fns'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import TripsPageClient, { type TripItem } from '@/components/trips/TripsPageClient'
+import { isReviewEligible } from '@/lib/listing-reviews'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,12 +37,16 @@ type AgreementRow = {
   completed_at: string | null
 }
 
+type ReviewRow = {
+  reservation_id: string
+}
+
 function one<T>(v: T | T[] | null | undefined): T | null {
   if (v == null) return null
   return Array.isArray(v) ? (v[0] ?? null) : v
 }
 
-function toTripItem(row: ReservationRow, signedIds: Set<string>): TripItem {
+function toTripItem(row: ReservationRow, signedIds: Set<string>, reviewedIds: Set<string>): TripItem {
   const listing = one(row.listings)
   const start = row.start_date
   const end = row.end_date
@@ -76,6 +81,8 @@ function toTripItem(row: ReservationRow, signedIds: Set<string>): TripItem {
     listing_vehicle_model: listing?.vehicle_model ?? null,
     has_signed_agreement: signedIds.has(row.id),
     stripe_checkout_session_id: row.stripe_checkout_session_id ?? null,
+    has_review: reviewedIds.has(row.id),
+    review_eligible: isReviewEligible(end, row.status, reviewedIds.has(row.id)),
   }
 }
 
@@ -157,29 +164,37 @@ export default async function TripsPage() {
   const activeRows = (allRows ?? []) as unknown as ReservationRow[]
   const cancelled = (cancelledRows ?? []) as unknown as ReservationRow[]
 
-  // Fetch signed agreements for this user's reservations
+  // Fetch signed agreements and existing reviews for this user's reservations
   const allIds = [...activeRows, ...cancelled].map((r) => r.id)
   let signedIds = new Set<string>()
+  let reviewedIds = new Set<string>()
   if (allIds.length > 0) {
-    const { data: agreements } = await supabase
-      .from('rental_agreement_submissions')
-      .select('reservation_id, completed_at')
-      .in('reservation_id', allIds)
-      .not('completed_at', 'is', null)
-    ;(agreements ?? []).forEach((a: AgreementRow) => signedIds.add(a.reservation_id))
+    const [agreementsRes, reviewsRes] = await Promise.all([
+      supabase
+        .from('rental_agreement_submissions')
+        .select('reservation_id, completed_at')
+        .in('reservation_id', allIds)
+        .not('completed_at', 'is', null),
+      supabase
+        .from('listing_reviews')
+        .select('reservation_id')
+        .in('reservation_id', allIds),
+    ])
+    ;(agreementsRes.data ?? []).forEach((a: AgreementRow) => signedIds.add(a.reservation_id))
+    ;(reviewsRes.data ?? []).forEach((r: ReviewRow) => reviewedIds.add(r.reservation_id))
   }
 
   // Split into Upcoming and Previous
   const upcoming: TripItem[] = activeRows
     .filter((r) => r.end_date >= today && r.status !== 'cancelled')
-    .map((r) => toTripItem(r, signedIds))
+    .map((r) => toTripItem(r, signedIds, reviewedIds))
     .sort((a, b) => a.start_date.localeCompare(b.start_date))
 
   const previousActive: TripItem[] = activeRows
     .filter((r) => r.end_date < today && r.status !== 'cancelled')
-    .map((r) => toTripItem(r, signedIds))
+    .map((r) => toTripItem(r, signedIds, reviewedIds))
 
-  const previousCancelled: TripItem[] = cancelled.map((r) => toTripItem(r, signedIds))
+  const previousCancelled: TripItem[] = cancelled.map((r) => toTripItem(r, signedIds, reviewedIds))
 
   const previous: TripItem[] = [...previousActive, ...previousCancelled].sort(
     (a, b) => b.start_date.localeCompare(a.start_date)

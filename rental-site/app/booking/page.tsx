@@ -1,20 +1,18 @@
-import BookingWizard from '@/components/booking/BookingWizard'
-import { getPublishedListings } from '@/lib/listings'
+import { redirect } from 'next/navigation'
 
-export default async function BookingPage({
+/**
+ * Legacy “Reserve Your Van” wizard was removed.
+ * Preserve old /booking URLs by redirecting to fleet with the same query string.
+ */
+export default function BookingRedirectPage({
   searchParams,
 }: {
-  searchParams: { listing?: string; checkIn?: string; checkOut?: string; guests?: string }
+  searchParams: Record<string, string | string[] | undefined>
 }) {
-  const listings = await getPublishedListings()
-  const guestsNum = searchParams.guests ? parseInt(searchParams.guests, 10) : undefined
-  return (
-    <BookingWizard
-      initialListings={listings}
-      preselectSlug={searchParams.listing}
-      initialCheckIn={searchParams.checkIn}
-      initialCheckOut={searchParams.checkOut}
-      initialGuests={Number.isFinite(guestsNum) ? guestsNum : undefined}
-    />
-  )
+  const qs = new URLSearchParams()
+  for (const [key, raw] of Object.entries(searchParams)) {
+    const v = Array.isArray(raw) ? raw[0] : raw
+    if (typeof v === 'string' && v !== '') qs.set(key, v)
+  }
+  redirect(qs.size > 0 ? `/fleet?${qs.toString()}` : '/fleet')
 }

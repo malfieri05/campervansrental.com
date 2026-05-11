@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { MapPin, Users, Ruler, Star, CheckCircle, FileText } from 'lucide-react'
+import { MapPin, Users, Ruler, CheckCircle, FileText } from 'lucide-react'
+import RatingOrNewBadge from '@/components/ui/RatingOrNewBadge'
 import type { BlockRange } from '@/lib/availability'
 import { resolveListingDateClick } from '@/lib/listing-date-selection'
 import type { Van } from '@/types'
 import { getCategoryLabel, formatVanLengthFt } from '@/lib/data'
+import { vanPickupDisplay } from '@/lib/listing-public-pickup'
 import ListingReservePanel from './ListingReservePanel'
 import ListingInlineChat from './ListingInlineChat'
 
@@ -62,9 +64,7 @@ export default function ListingDetailBody({ van, blocks, pets, smoking }: Props)
           {/* Meta row */}
           <div className="flex flex-wrap gap-4 text-sm text-forest-800">
             <span className="inline-flex items-center gap-1.5">
-              <Star className="w-4 h-4 text-gold-500 flex-shrink-0" fill="#e0a82a" strokeWidth={0} />
-              <span className="font-medium">{van.rating}</span>
-              <span className="text-charcoal/45">({van.reviewCount} reviews)</span>
+              <RatingOrNewBadge reviewCount={van.reviewCount} rating={van.rating} size="md" />
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Users className="w-4 h-4 flex-shrink-0" />
@@ -76,7 +76,7 @@ export default function ListingDetailBody({ van, blocks, pets, smoking }: Props)
             </span>
             <span className="inline-flex items-center gap-1.5">
               <MapPin className="w-4 h-4 flex-shrink-0" />
-              {van.location}
+              {vanPickupDisplay(van)}
             </span>
           </div>
         </div>
@@ -129,7 +129,7 @@ export default function ListingDetailBody({ van, blocks, pets, smoking }: Props)
               {van.amenities.map((a) => (
                 <span
                   key={a.label}
-                  className="font-sans text-sm text-charcoal/70 bg-cream-100 border border-cream-300/60 px-3 py-1.5 rounded-full"
+                  className="font-sans text-sm text-blue-700 bg-cream-100 border border-blue-400 px-3 py-1.5 rounded-full"
                 >
                   {a.label}
                 </span>
@@ -153,7 +153,7 @@ export default function ListingDetailBody({ van, blocks, pets, smoking }: Props)
                 <span
                   className={[
                     'w-2 h-2 rounded-full flex-shrink-0',
-                    allowed ? 'bg-forest-500' : 'bg-charcoal/25',
+                    allowed ? 'bg-green-500' : 'bg-red-500',
                   ].join(' ')}
                 />
                 <span className="font-sans text-sm text-charcoal/70">

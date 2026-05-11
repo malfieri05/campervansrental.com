@@ -6,8 +6,9 @@ import { dateRangesOverlapHalfOpen } from '@/lib/checkout'
 import {
   reservationFeeCents,
   tripTotalCentsExcludingSecurityDeposit,
-  RESERVATION_FEE_REFUND_COPY,
+  reservationFeeRefundPolicyCopy,
 } from '@/lib/booking-pricing'
+import { publicPickupLabelForListing } from '@/lib/listing-public-pickup'
 
 export async function POST(request: Request) {
   const supabase = await createServerSupabaseClient()
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
   const { data: listing, error: listingErr } = await svc
     .from('listings')
     .select(
-      'id, title, price_per_night_cents, cleaning_fee_cents, insurance_fee_cents, min_nights, status, location_label'
+      'id, title, price_per_night_cents, cleaning_fee_cents, insurance_fee_cents, min_nights, status, location_label, address_city, address_state, address_country, cancellation_policy'
     )
     .eq('id', listingId)
     .eq('status', 'published')
@@ -80,9 +81,12 @@ export async function POST(request: Request) {
   }
 
   const pickupResolved =
-    typeof listing.location_label === 'string' && listing.location_label.trim()
-      ? listing.location_label.trim()
-      : 'See listing'
+    publicPickupLabelForListing({
+      location_label: listing.location_label as string | null,
+      address_city: listing.address_city as string | null,
+      address_state: listing.address_state as string | null,
+      address_country: listing.address_country as string | null,
+    }).trim() || 'See listing'
 
   const nights = Math.ceil(
     (new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)
@@ -193,6 +197,10 @@ export async function POST(request: Request) {
   }
   const origin = siteUrl()
 
+  const feePolicyCopy = reservationFeeRefundPolicyCopy(
+    listing.cancellation_policy as string | null | undefined
+  )
+
   const session = await stripe.checkout.sessions.create({
     ui_mode: 'embedded',
     mode: 'payment',
@@ -205,7 +213,7 @@ export async function POST(request: Request) {
           currency: 'usd',
           product_data: {
             name: `Reservation fee (25%) — ${listing.title as string}`,
-            description: `${startDate} → ${endDate} (${nights} nights). ${RESERVATION_FEE_REFUND_COPY}`,
+            description: `${startDate} → ${endDate} (${nights} nights). ${feePolicyCopy}`,
           },
           unit_amount: reservationFee,
         },

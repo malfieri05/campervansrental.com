@@ -4,7 +4,17 @@ import { ChevronLeft } from 'lucide-react'
 import VanCard from '@/components/fleet/VanCard'
 import { Van } from '@/types'
 
-export default function FleetPageClient({ listings }: { listings: Van[] }) {
+type FleetPageClientProps = {
+  listings: Van[]
+  fleetTotalCount: number
+  searchFiltersActive?: boolean
+}
+
+export default function FleetPageClient({
+  listings,
+  fleetTotalCount,
+  searchFiltersActive = false,
+}: FleetPageClientProps) {
   return (
     <div className="min-h-screen bg-cream-100 -mt-20">
       <section className="relative h-72 md:h-96 flex items-end overflow-hidden">
@@ -39,7 +49,11 @@ export default function FleetPageClient({ listings }: { listings: Van[] }) {
         {listings.length > 0 ? (
           <>
             <p className="font-sans text-sm text-charcoal/40 mb-8">
-              Showing {listings.length} van{listings.length !== 1 ? 's' : ''}
+              {searchFiltersActive
+                ? fleetTotalCount > listings.length
+                  ? `Showing ${listings.length} of ${fleetTotalCount} vans that match your search`
+                  : `Showing ${listings.length} van${listings.length !== 1 ? 's' : ''} matching your search`
+                : `Showing ${listings.length} van${listings.length !== 1 ? 's' : ''}`}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {listings.map((van) => (
@@ -49,9 +63,23 @@ export default function FleetPageClient({ listings }: { listings: Van[] }) {
           </>
         ) : (
           <div className="text-center py-24">
-            <p className="font-serif text-2xl text-charcoal/40 mb-3">No vans in the fleet yet</p>
+            <p className="font-serif text-2xl text-charcoal/40 mb-3">
+              {searchFiltersActive && fleetTotalCount > 0
+                ? 'No vans match your search'
+                : 'No vans in the fleet yet'}
+            </p>
             <p className="font-sans text-sm text-charcoal/30">
-              Check back soon or publish a listing from the host dashboard.
+              {searchFiltersActive && fleetTotalCount > 0 ? (
+                <>
+                  Try different dates or location, or{' '}
+                  <Link href="/fleet" className="text-forest-700 font-medium underline-offset-4 hover:underline">
+                    browse the full fleet
+                  </Link>
+                  .
+                </>
+              ) : (
+                <>Check back soon or publish a listing from the host dashboard.</>
+              )}
             </p>
           </div>
         )}

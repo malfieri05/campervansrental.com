@@ -49,10 +49,13 @@ export default async function HostHomePage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
       <div className="mb-10">
-        <h1 className="font-sans text-3xl font-bold tracking-tight text-neutral-900">
-          {firstName ? `Welcome back, ${firstName}` : 'Host dashboard'}
+        <h1 className="mb-4 font-display text-[calc(1.3rem*1.3)] font-bold uppercase tracking-[0.16em] text-forest-700 sm:mb-5 sm:text-[calc(1.35rem*1.3)]">
+          Host dashboard
         </h1>
-        <p className="mt-2 text-sm text-neutral-500">
+        <h2 className="mb-1.5 font-sans text-[calc(1.875rem*0.9)] font-bold leading-tight tracking-tight text-neutral-900 sm:mb-2">
+          {firstName ? `Welcome back, ${firstName}!` : 'Welcome back!'}
+        </h2>
+        <p className="text-sm text-neutral-500">
           Manage your listings, calendar, and bookings from one place.
         </p>
       </div>
@@ -87,7 +90,7 @@ export default async function HostHomePage() {
             href="/host/listings/new"
             className="inline-flex h-10 shrink-0 items-center justify-center rounded-full border border-neutral-900 px-5 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-50"
           >
-            Add an RV
+            Add a vehicle
           </Link>
         </div>
       </div>

@@ -17,9 +17,15 @@ type AuthState =
       firstName: string
       initials: string
       isHost: boolean
+      avatarUrl: string | null
     }
 
-function buildIdentity(displayName: string | null | undefined, email: string, isHost: boolean): AuthState {
+function buildIdentity(
+  displayName: string | null | undefined,
+  email: string,
+  isHost: boolean,
+  avatarUrl: string | null | undefined
+): AuthState {
   const rawName = displayName?.trim()
   const nameParts = rawName ? rawName.split(/\s+/).filter(Boolean) : []
   const firstName = nameParts[0] || email.split('@')[0]
@@ -38,6 +44,7 @@ function buildIdentity(displayName: string | null | undefined, email: string, is
     firstName,
     initials,
     isHost,
+    avatarUrl: avatarUrl?.trim() || null,
   }
 }
 
@@ -62,11 +69,11 @@ export default function UserAuthNav({ mobile = false, onMobileNavigate }: { mobi
 
       const { data } = await supabase
         .from('profiles')
-        .select('display_name, is_host')
+        .select('display_name, is_host, avatar_url')
         .eq('id', user.id)
         .single()
 
-      setAuthState(buildIdentity(data?.display_name, user.email, Boolean(data?.is_host)))
+      setAuthState(buildIdentity(data?.display_name, user.email, Boolean(data?.is_host), data?.avatar_url))
     }
 
     void supabase.auth.getSession().then(({ data }) => {
@@ -184,10 +191,18 @@ export default function UserAuthNav({ mobile = false, onMobileNavigate }: { mobi
         onClick={() => setOpen((v) => !v)}
         className="group grid h-10 w-10 shrink-0 grid-cols-1 grid-rows-1 overflow-hidden rounded-full border border-cream-300/50 bg-forest-900 p-0 transition hover:border-gold-300/70"
       >
-        <ProfileInitialsContent
-          initials={authState.initials}
-          textClassName="font-display text-cream-100 group-hover:text-gold-200"
-        />
+        {authState.avatarUrl ? (
+          <img
+            src={authState.avatarUrl}
+            alt={`${authState.firstName} profile`}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <ProfileInitialsContent
+            initials={authState.initials}
+            textClassName="font-display text-cream-100 group-hover:text-gold-200"
+          />
+        )}
       </button>
 
       {open && (

@@ -7,6 +7,7 @@ type ListingRow = {
   slug: string
   category: string
   location_label: string | null
+  cancellation_policy?: string | null
 }
 
 /**
@@ -33,7 +34,7 @@ export async function sendBookingConfirmationForReservationId(
       fees_cents,
       total_cents,
       deposit_cents,
-      listings ( title, slug, category, location_label )
+      listings ( title, slug, category, location_label, cancellation_policy )
     `
     )
     .eq('id', reservationId)
@@ -78,5 +79,6 @@ export async function sendBookingConfirmationForReservationId(
     feesCents: resv.fees_cents as number,
     totalCents: resv.total_cents as number,
     reservationFeePaidCents: resv.deposit_cents as number,
+    cancellationPolicy: listing.cancellation_policy ?? null,
   })
 }

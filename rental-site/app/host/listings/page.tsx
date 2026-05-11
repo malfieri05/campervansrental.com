@@ -67,7 +67,7 @@ export default async function HostListingsPage() {
             href="/host/listings/new"
             className="inline-flex h-10 shrink-0 items-center justify-center rounded-full border border-neutral-900 px-5 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-50"
           >
-            Add an RV
+            Add a vehicle
           </Link>
         </div>
 
