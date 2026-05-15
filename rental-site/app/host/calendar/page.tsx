@@ -1,5 +1,16 @@
+import dynamic from 'next/dynamic'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import HostCalendarClient from './HostCalendarClient'
+
+// Defer the calendar UI — the server does all the DB work then streams a
+// skeleton while JS for the interactive calendar loads.
+const HostCalendarClient = dynamic(() => import('./HostCalendarClient'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[calc(100vh-5rem)] items-center justify-center bg-cream-100 animate-pulse">
+      <div className="h-8 w-32 rounded-xl bg-cream-300/60" />
+    </div>
+  ),
+})
 
 export type HostListingMeta = {
   id: string

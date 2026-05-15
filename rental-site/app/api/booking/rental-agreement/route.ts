@@ -17,6 +17,8 @@ import { createServiceRoleClient } from '@/lib/supabase/server'
 import { AGREEMENT_VERSION } from '@/lib/rental-agreement-template'
 import { sendRentalAgreementCompletionPacketIfNeeded } from '@/lib/rental-agreement-completion-email'
 
+export const runtime = 'nodejs'
+
 // ─── Shared auth helper ──────────────────────────────────────────────────────
 
 async function authorizeSession(

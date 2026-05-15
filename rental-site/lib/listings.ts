@@ -1,9 +1,15 @@
+import { unstable_cache } from 'next/cache'
 import { vans, formatVanLengthFt } from '@/lib/data'
 import { isSupabaseConfigured } from '@/lib/env'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createAnonClient } from '@/lib/supabase/anon'
 import type { Amenity, FAQ, Van } from '@/types'
 import type { ListingReview } from '@/lib/listing-reviews'
 import { pickupAreaFromAddress } from '@/lib/listing-public-pickup'
+
+// Cache tags used to invalidate the public catalog from host listing actions.
+export const LISTINGS_ALL_TAG = 'listings-all'
+export const listingSlugTag = (slug: string) => `listing:${slug}`
 
 type ListingRow = {
   id: string
@@ -96,66 +102,92 @@ function mapRowToVan(row: ListingRow): Van {
   }
 }
 
+const LISTING_SELECT = `
+  id,
+  slug,
+  title,
+  tagline,
+  description,
+  length_label,
+  sleeps,
+  location_label,
+  address_city,
+  address_state,
+  address_country,
+  category,
+  price_per_night_cents,
+  cleaning_fee_cents,
+  insurance_fee_cents,
+  min_nights,
+  security_deposit_cents,
+  amenities,
+  features,
+  rules,
+  rating,
+  review_count,
+  whats_included,
+  listing_faqs,
+  trip_recommendations,
+  youtube_video_url,
+  pickup_dropoff_rules_text,
+  pickup_dropoff_rules_doc_url,
+  listing_chatbot_enabled,
+  cancellation_policy,
+  listing_images (url, sort_order)
+`
+
+/**
+ * Internal (cached) fetcher — uses the anon client so no cookies are captured
+ * in the cache. Revalidates every 60 s and on-demand via revalidateTag.
+ */
+const _fetchPublishedListings = unstable_cache(
+  async (): Promise<ListingRow[]> => {
+    const supabase = createAnonClient()
+    if (!supabase) return []
+    const { data, error } = await supabase
+      .from('listings')
+      .select(LISTING_SELECT)
+      .eq('status', 'published')
+      .order('updated_at', { ascending: false })
+    if (error || !data) return []
+    return data as ListingRow[]
+  },
+  [LISTINGS_ALL_TAG],
+  { tags: [LISTINGS_ALL_TAG], revalidate: 60 }
+)
+
 export async function getPublishedListings(): Promise<Van[]> {
   if (!isSupabaseConfigured()) {
     return vans.map(mapStaticVan)
   }
-
   try {
-    const supabase = await createServerSupabaseClient()
-    if (!supabase) {
-      return vans.map(mapStaticVan)
-    }
-
-    const { data, error } = await supabase
-      .from('listings')
-      .select(
-        `
-      id,
-      slug,
-      title,
-      tagline,
-      description,
-      length_label,
-      sleeps,
-      location_label,
-      address_city,
-      address_state,
-      address_country,
-      category,
-      price_per_night_cents,
-      cleaning_fee_cents,
-      insurance_fee_cents,
-      min_nights,
-      security_deposit_cents,
-      amenities,
-      features,
-      rules,
-      rating,
-      review_count,
-      whats_included,
-      listing_faqs,
-      trip_recommendations,
-      youtube_video_url,
-      pickup_dropoff_rules_text,
-      pickup_dropoff_rules_doc_url,
-      listing_chatbot_enabled,
-      cancellation_policy,
-      listing_images (url, sort_order)
-    `
-      )
-      .eq('status', 'published')
-      .order('updated_at', { ascending: false })
-
-    if (error || !data?.length) {
-      return vans.map(mapStaticVan)
-    }
-
-    return (data as ListingRow[]).map(mapRowToVan)
+    const rows = await _fetchPublishedListings()
+    if (!rows.length) return vans.map(mapStaticVan)
+    return rows.map(mapRowToVan)
   } catch {
     return vans.map(mapStaticVan)
   }
 }
+
+const _fetchListingBySlug = unstable_cache(
+  async (slug: string): Promise<ListingRow | null> => {
+    const supabase = createAnonClient()
+    if (!supabase) return null
+    const { data, error } = await supabase
+      .from('listings')
+      .select(LISTING_SELECT)
+      .eq('status', 'published')
+      .eq('slug', slug)
+      .maybeSingle()
+    if (error || !data) return null
+    return data as ListingRow
+  },
+  ['listing-by-slug'],
+  {
+    tags: [LISTINGS_ALL_TAG],
+    revalidate: 60,
+  }
+)
 
 export async function getPublishedListingBySlug(slug: string): Promise<Van | null> {
   if (!isSupabaseConfigured()) {
@@ -164,6 +196,12 @@ export async function getPublishedListingBySlug(slug: string): Promise<Van | nul
   }
 
   try {
+    // First try the cache — this covers the common path for published listings.
+    const cached = await _fetchListingBySlug(slug)
+    if (cached) return mapRowToVan(cached)
+
+    // If not found in cache the listing may be unpublished; fall back to the
+    // cookie-aware client so host previews (draft listings) still work.
     const supabase = await createServerSupabaseClient()
     if (!supabase) {
       const v = vans.find((x) => x.id === slug)
@@ -172,41 +210,7 @@ export async function getPublishedListingBySlug(slug: string): Promise<Van | nul
 
     const { data, error } = await supabase
       .from('listings')
-      .select(
-        `
-      id,
-      slug,
-      title,
-      tagline,
-      description,
-      length_label,
-      sleeps,
-      location_label,
-      address_city,
-      address_state,
-      address_country,
-      category,
-      price_per_night_cents,
-      cleaning_fee_cents,
-      insurance_fee_cents,
-      min_nights,
-      security_deposit_cents,
-      amenities,
-      features,
-      rules,
-      rating,
-      review_count,
-      whats_included,
-      listing_faqs,
-      trip_recommendations,
-      youtube_video_url,
-      pickup_dropoff_rules_text,
-      pickup_dropoff_rules_doc_url,
-      listing_chatbot_enabled,
-      cancellation_policy,
-      listing_images (url, sort_order)
-    `
-      )
+      .select(LISTING_SELECT)
       .eq('status', 'published')
       .eq('slug', slug)
       .maybeSingle()

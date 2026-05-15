@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/sync-external-calendars",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/generate-maintenance-tasks",
+      "schedule": "0 6 * * *"
     }
   ]
 }

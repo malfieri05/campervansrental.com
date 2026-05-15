@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 
+export const runtime = 'nodejs'
+
 // GET  /api/host/calendar/external?listing_id=<id>  — list feeds for a listing
 // POST /api/host/calendar/external                  — create a new feed
 // PATCH/DELETE handled via /api/host/calendar/external/[id]

@@ -1,9 +1,16 @@
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { CalendarRange, User, ArrowUpRight } from 'lucide-react'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
-import BookingsStatusTabs, { type HostBookingCounts } from './BookingsStatusTabs'
-import HostBookingRespondButtons from '@/components/host/bookings/HostBookingRespondButtons'
+import type { HostBookingCounts } from './BookingsStatusTabs'
+
+// Defer framer-motion tab bar and host respond buttons (fetched server-side data arrives first).
+const BookingsStatusTabs = dynamic(() => import('./BookingsStatusTabs'), { ssr: false })
+const HostBookingRespondButtons = dynamic(
+  () => import('@/components/host/bookings/HostBookingRespondButtons'),
+  { ssr: false }
+)
 
 type StatusParam = 'pending' | 'confirmed' | 'completed' | 'cancelled'
 

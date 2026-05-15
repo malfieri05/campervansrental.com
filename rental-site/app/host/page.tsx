@@ -1,13 +1,12 @@
 import Link from 'next/link'
-import { CalendarDays, BookOpen, LayoutList, ArrowRight } from 'lucide-react'
+import { Suspense } from 'react'
+import { CalendarDays, BookOpen, LayoutList, ArrowRight, HeartPulse } from 'lucide-react'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { isVehicleHealthUiEnabled } from '@/lib/feature-flags'
+import VehicleHealthSection from '@/components/host/VehicleHealthSection'
 
 export default async function HostHomePage() {
   const supabase = await createServerSupabaseClient()
-  const displayName = (() => {
-    // best-effort; not critical if it fails
-    return null
-  })()
 
   let firstName: string | null = null
   if (supabase) {
@@ -47,7 +46,7 @@ export default async function HostHomePage() {
   ]
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
       <div className="mb-10">
         <h1 className="mb-4 font-display text-[calc(1.3rem*1.3)] font-bold uppercase tracking-[0.16em] text-forest-700 sm:mb-5 sm:text-[calc(1.35rem*1.3)]">
           Host dashboard
@@ -94,6 +93,34 @@ export default async function HostHomePage() {
           </Link>
         </div>
       </div>
+
+      {/* Vehicle Health Hub — hidden until NEXT_PUBLIC_SHOW_VEHICLE_HEALTH_UI=true */}
+      {isVehicleHealthUiEnabled() && (
+        <section className="mt-12">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <div className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-forest-50 border border-forest-100 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.12em] text-forest-700">
+                <HeartPulse className="h-3 w-3" />
+                Vehicle Health
+              </div>
+              <h2 className="font-sans text-xl font-bold leading-tight tracking-tight text-neutral-900">
+                Vehicle Maintenance data
+              </h2>
+              <p className="mt-1 text-sm text-neutral-500">
+                Track mileage, maintenance reminders, and damage reports across your fleet.
+              </p>
+            </div>
+          </div>
+
+          <Suspense
+            fallback={
+              <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm h-64 animate-pulse" />
+            }
+          >
+            <VehicleHealthSection />
+          </Suspense>
+        </section>
+      )}
     </div>
   )
 }

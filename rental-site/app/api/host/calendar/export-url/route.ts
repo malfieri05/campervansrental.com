@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { buildHostCalendarExportUrl } from '@/lib/host-calendar-export-url'
 
+export const runtime = 'nodejs'
+
 export const dynamic = 'force-dynamic'
 
 function resolveBaseUrl(req: NextRequest): string | null {

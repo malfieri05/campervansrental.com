@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { fetchICalBusyIntervals } from '@/lib/ical-sync'
 
+export const runtime = 'nodejs'
+
 /**
  * POST /api/host/calendar/external/[id]/sync
  *

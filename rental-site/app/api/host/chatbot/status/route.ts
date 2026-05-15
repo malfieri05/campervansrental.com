@@ -6,6 +6,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 
+export const runtime = 'nodejs'
+
 export async function GET(req: NextRequest) {
   const documentId = req.nextUrl.searchParams.get('documentId')
   if (!documentId) return NextResponse.json({ error: 'Missing documentId' }, { status: 400 })

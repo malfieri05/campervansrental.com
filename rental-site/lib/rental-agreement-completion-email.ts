@@ -124,16 +124,18 @@ function buildAttachments(
   ]
 
   return (async () => {
-    for (const { path, filename } of extras) {
-      if (!path?.trim()) continue
-      const dl = await downloadStorageFile(svc, path)
-      if (!dl) continue
-      const ext = (path.split('.').pop() ?? 'bin').toLowerCase().replace('jpeg', 'jpg')
-      out.push({
-        filename: `${filename}.${ext}`,
-        content: dl.buffer,
-        contentType: dl.contentType,
+    // Download all attachments in parallel — avoids sequential Storage round-trips.
+    const downloads = await Promise.all(
+      extras.map(async ({ path, filename }) => {
+        if (!path?.trim()) return null
+        const dl = await downloadStorageFile(svc, path)
+        if (!dl) return null
+        const ext = (path.split('.').pop() ?? 'bin').toLowerCase().replace('jpeg', 'jpg')
+        return { filename: `${filename}.${ext}`, content: dl.buffer, contentType: dl.contentType }
       })
+    )
+    for (const attachment of downloads) {
+      if (attachment) out.push(attachment)
     }
     return out
   })()

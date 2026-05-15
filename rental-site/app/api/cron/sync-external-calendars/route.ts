@@ -40,21 +40,31 @@ export async function GET(req: NextRequest) {
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? `https://${req.headers.get('host')}`
+
+  // Fan out syncs in parallel batches of 6 — polite to upstream iCal hosts
+  // while cutting wall time from O(N) sequential to O(N/6) parallel.
+  const CONCURRENCY = 6
+  const allFeeds = feeds ?? []
   const results: { id: string; ok: boolean; error?: string }[] = []
 
-  for (const feed of feeds ?? []) {
-    try {
-      const res = await fetch(
-        `${baseUrl}/api/host/calendar/external/${feed.id}/sync`,
-        {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${cronSecret}` },
-        }
-      )
-      const json = await res.json().catch(() => ({}))
-      results.push({ id: feed.id as string, ok: res.ok, error: json.error })
-    } catch (err) {
-      results.push({ id: feed.id as string, ok: false, error: String(err) })
+  for (let i = 0; i < allFeeds.length; i += CONCURRENCY) {
+    const batch = allFeeds.slice(i, i + CONCURRENCY)
+    const settled = await Promise.allSettled(
+      batch.map(async (feed) => {
+        const res = await fetch(
+          `${baseUrl}/api/host/calendar/external/${feed.id}/sync`,
+          { method: 'POST', headers: { Authorization: `Bearer ${cronSecret}` } }
+        )
+        const json = await res.json().catch(() => ({}))
+        return { id: feed.id as string, ok: res.ok, error: (json as { error?: string }).error }
+      })
+    )
+    for (const outcome of settled) {
+      if (outcome.status === 'fulfilled') {
+        results.push(outcome.value)
+      } else {
+        results.push({ id: 'unknown', ok: false, error: String(outcome.reason) })
+      }
     }
   }
 

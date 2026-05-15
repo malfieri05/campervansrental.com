@@ -1,8 +1,15 @@
+import lazyImport from 'next/dynamic'
 import { redirect } from 'next/navigation'
 import { differenceInCalendarDays, parseISO } from 'date-fns'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import TripsPageClient, { type TripItem } from '@/components/trips/TripsPageClient'
+import type { TripItem } from '@/components/trips/TripsPageClient'
 import { isReviewEligible } from '@/lib/listing-reviews'
+
+// Defer 762-LOC TripsPageClient — server fetches all data first, client JS loads in background.
+const TripsPageClient = lazyImport(
+  () => import('@/components/trips/TripsPageClient'),
+  { ssr: false }
+)
 
 export const dynamic = 'force-dynamic'
 
@@ -97,69 +104,45 @@ export default async function TripsPage() {
 
   const today = new Date().toISOString().split('T')[0]
 
-  // Fetch all non-cancelled confirmed/pending trips
-  const { data: allRows } = await supabase
-    .from('reservations')
-    .select(
-      `
-      id,
-      start_date,
-      end_date,
-      guests,
-      status,
-      subtotal_cents,
-      fees_cents,
-      total_cents,
-      deposit_cents,
-      pickup_location,
-      stripe_checkout_session_id,
-      listings (
-        title,
-        slug,
-        category,
-        location_label,
-        vehicle_year,
-        vehicle_make,
-        vehicle_model,
-        listing_images ( url, sort_order )
-      )
-    `
+  const reservationSelect = `
+    id,
+    start_date,
+    end_date,
+    guests,
+    status,
+    subtotal_cents,
+    fees_cents,
+    total_cents,
+    deposit_cents,
+    pickup_location,
+    stripe_checkout_session_id,
+    listings (
+      title,
+      slug,
+      category,
+      location_label,
+      vehicle_year,
+      vehicle_make,
+      vehicle_model,
+      listing_images ( url, sort_order )
     )
-    .eq('renter_id', user.id)
-    .neq('status', 'cancelled')
-    .order('start_date', { ascending: false })
+  `
 
-  // Fetch cancelled trips (Previous tab only)
-  const { data: cancelledRows } = await supabase
-    .from('reservations')
-    .select(
-      `
-      id,
-      start_date,
-      end_date,
-      guests,
-      status,
-      subtotal_cents,
-      fees_cents,
-      total_cents,
-      deposit_cents,
-      pickup_location,
-      stripe_checkout_session_id,
-      listings (
-        title,
-        slug,
-        category,
-        location_label,
-        vehicle_year,
-        vehicle_make,
-        vehicle_model,
-        listing_images ( url, sort_order )
-      )
-    `
-    )
-    .eq('renter_id', user.id)
-    .eq('status', 'cancelled')
-    .order('start_date', { ascending: false })
+  // Fetch active + cancelled trips in parallel — halves reservation TTFB
+  const [{ data: allRows }, { data: cancelledRows }] = await Promise.all([
+    supabase
+      .from('reservations')
+      .select(reservationSelect)
+      .eq('renter_id', user.id)
+      .neq('status', 'cancelled')
+      .order('start_date', { ascending: false }),
+    supabase
+      .from('reservations')
+      .select(reservationSelect)
+      .eq('renter_id', user.id)
+      .eq('status', 'cancelled')
+      .order('start_date', { ascending: false }),
+  ])
 
   const activeRows = (allRows ?? []) as unknown as ReservationRow[]
   const cancelled = (cancelledRows ?? []) as unknown as ReservationRow[]

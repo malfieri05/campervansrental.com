@@ -3,7 +3,7 @@
  * similarity search — all server-only.
  */
 
-import { embed } from 'ai'
+import { embed, embedMany } from 'ai'
 import { openai } from '@ai-sdk/openai'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { pickupAreaFromAddress } from '@/lib/listing-public-pickup'
@@ -137,17 +137,26 @@ export async function ingestDocumentChunks(
   // Delete any existing chunks for this document first
   await svc.from('listing_chat_chunks').delete().eq('document_id', documentId)
 
-  const rows: Array<{ listing_id: string; document_id: string; content: string; embedding: number[] | null }> = []
-
-  for (const chunk of chunks) {
-    let embedding: number[] | null = null
-    try {
-      embedding = await embedText(chunk)
-    } catch {
-      // Proceed without embedding; chunk is still stored for text fallback
-    }
-    rows.push({ listing_id: listingId, document_id: documentId, content: chunk, embedding })
+  // Batch all chunks into a single OpenAI Embeddings request — O(1) requests
+  // instead of O(N), cutting ingest latency from seconds to milliseconds.
+  let embeddings: (number[] | null)[] = chunks.map(() => null)
+  try {
+    const { embeddings: batchEmbeddings } = await embedMany({
+      model: openai.embedding('text-embedding-3-small'),
+      values: chunks,
+    })
+    embeddings = batchEmbeddings
+  } catch {
+    // Proceed without embeddings; chunks are still stored for text fallback.
   }
+
+  const rows: Array<{ listing_id: string; document_id: string; content: string; embedding: number[] | null }> =
+    chunks.map((chunk, i) => ({
+      listing_id: listingId,
+      document_id: documentId,
+      content: chunk,
+      embedding: embeddings[i] ?? null,
+    }))
 
   const { error } = await svc.from('listing_chat_chunks').insert(rows)
   if (error) return { ok: false, error: error.message }

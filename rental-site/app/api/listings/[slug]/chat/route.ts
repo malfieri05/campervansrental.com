@@ -14,6 +14,8 @@ import { openai } from '@ai-sdk/openai'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { buildListingContextText, embedText, searchListingChunks } from '@/lib/chatbot'
 
+export const runtime = 'nodejs'
+
 // ─── Simple in-process rate limiter ──────────────────────────────────────────
 
 type Window = { count: number; resetAt: number }
@@ -83,7 +85,17 @@ export async function POST(
 
   const { data: listing } = await svc
     .from('listings')
-    .select('*')
+    .select(
+      `id,
+       title, tagline, description, location_label,
+       address_city, address_state, address_country,
+       vehicle_class, vehicle_year, vehicle_make, vehicle_model,
+       length_label, sleeps, seatbelts, category,
+       price_per_night_cents, cleaning_fee_cents, min_nights, security_deposit_cents,
+       cancellation_policy, whats_included, trip_recommendations,
+       other_things_note, pickup_dropoff_rules_text,
+       rules, amenities, features, listing_faqs, listing_chatbot_notes`
+    )
     .eq('slug', params.slug)
     .eq('status', 'published')
     .eq('listing_chatbot_enabled', true)

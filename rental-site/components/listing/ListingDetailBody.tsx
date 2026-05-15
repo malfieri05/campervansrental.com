@@ -22,9 +22,13 @@ export default function ListingDetailBody({ van, blocks, pets, smoking }: Props)
   const [checkIn, setCheckIn] = useState<string | null>(null)
   const [checkOut, setCheckOut] = useState<string | null>(null)
 
-  // Fire view increment on mount
+  // Fire view increment at most once per browser session per listing to
+  // prevent write amplification from rapid navigations / React Strict Mode remounts.
   useEffect(() => {
+    const key = `viewed:${van.id}`
+    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(key)) return
     void fetch(`/api/listings/${van.id}/view`, { method: 'POST' }).catch(() => {})
+    try { sessionStorage.setItem(key, '1') } catch { /* storage may be blocked */ }
   }, [van.id])
 
   const handleDateClick = (key: string) => {

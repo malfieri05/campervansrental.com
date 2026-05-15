@@ -6,7 +6,21 @@ import { isSupabaseConfigured } from '@/lib/env'
 const AUTH_GET_USER_TIMEOUT_MS =
   process.env.NODE_ENV === 'development' ? 3500 : 12_000
 
+function vehicleHealthUiDisabled() {
+  return process.env.NEXT_PUBLIC_SHOW_VEHICLE_HEALTH_UI !== 'true'
+}
+
 export async function middleware(request: NextRequest) {
+  if (vehicleHealthUiDisabled()) {
+    const path = request.nextUrl.pathname
+    if (path.startsWith('/mechanic')) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+    if (path.startsWith('/host/health')) {
+      return NextResponse.redirect(new URL('/host', request.url))
+    }
+  }
+
   if (!isSupabaseConfigured()) {
     return NextResponse.next()
   }

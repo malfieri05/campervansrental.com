@@ -15,6 +15,8 @@ const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { ingestDocumentChunks } from '@/lib/chatbot'
 
+export const runtime = 'nodejs'
+
 const MAX_BYTES = 10 * 1024 * 1024 // 10 MB
 
 export async function POST(req: NextRequest) {

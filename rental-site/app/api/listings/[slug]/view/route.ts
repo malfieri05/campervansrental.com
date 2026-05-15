@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { isSupabaseConfigured } from '@/lib/env'
 
+export const runtime = 'nodejs'
+
 export async function POST(
   _req: Request,
   { params }: { params: { slug: string } }

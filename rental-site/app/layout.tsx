@@ -1,9 +1,32 @@
 import type { Metadata, Viewport } from 'next'
 import { Suspense } from 'react'
+import { Playfair_Display, Inter, Montserrat } from 'next/font/google'
 import './globals.css'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { DevSupabaseConfigBanner } from '@/components/dev/DevSupabaseConfigBanner'
+
+const playfairDisplay = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+  variable: '--font-serif',
+})
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600'],
+  display: 'swap',
+  variable: '--font-sans',
+})
+
+const montserrat = Montserrat({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  display: 'swap',
+  variable: '--font-display',
+})
 
 export const metadata: Metadata = {
   icons: {
@@ -72,15 +95,10 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-      </head>
+    <html
+      lang="en"
+      className={`${playfairDisplay.variable} ${inter.variable} ${montserrat.variable} scroll-smooth`}
+    >
       <body className="bg-cream-100 text-charcoal font-sans antialiased">
         <Suspense fallback={null}>
           <DevSupabaseConfigBanner />

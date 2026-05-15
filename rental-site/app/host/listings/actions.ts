@@ -1,8 +1,10 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { uniqueSlug } from '@/lib/slug'
+import { LISTINGS_ALL_TAG } from '@/lib/listings'
+import { geocodeAddress } from '@/lib/geocode'
 import type { Van } from '@/types'
 
 // ─── Shared types ────────────────────────────────────────────────────────────
@@ -210,16 +212,39 @@ export async function updateListing(
   if (!user) return { ok: false, error: 'Unauthorized' }
 
   const { id, ...patch } = input
+
+  // Geocode when any address field is present in the update payload.
+  const addressChanged =
+    patch.address_street !== undefined ||
+    patch.address_city !== undefined ||
+    patch.address_state !== undefined ||
+    patch.address_zip !== undefined
+
+  let geoFields: { lat?: number | null; lng?: number | null } = {}
+  if (addressChanged) {
+    const point = await geocodeAddress({
+      street: patch.address_street,
+      city: patch.address_city,
+      state: patch.address_state,
+      zip: patch.address_zip,
+    })
+    if (point) {
+      geoFields = { lat: point.lat, lng: point.lng }
+    }
+  }
+
   const { error } = await supabase
     .from('listings')
     .update({
       ...patch,
+      ...geoFields,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
     .eq('owner_id', user.id)
 
   if (error) return { ok: false, error: withSchemaHint(error.message) }
+  revalidateTag(LISTINGS_ALL_TAG)
   revalidatePath('/host')
   revalidatePath('/host/listings')
   revalidatePath(`/host/listings/${id}/edit`)
@@ -259,6 +284,7 @@ export async function publishListing(
 
   if (error || !data) return { ok: false, error: error?.message ?? 'Publish failed' }
 
+  revalidateTag(LISTINGS_ALL_TAG)
   revalidatePath('/fleet')
   revalidatePath(`/listings/${data.slug}`)
   revalidatePath('/host')
@@ -285,6 +311,7 @@ export async function deleteListing(
 
   if (error) return { ok: false, error: withSchemaHint(error.message) }
 
+  revalidateTag(LISTINGS_ALL_TAG)
   revalidatePath('/host')
   revalidatePath('/host/listings')
   revalidatePath('/host/calendar')

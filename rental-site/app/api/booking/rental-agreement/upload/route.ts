@@ -13,6 +13,8 @@ import { NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 
+export const runtime = 'nodejs'
+
 const BUCKET = 'rental-agreement-docs'
 const MAX_BYTES = 5 * 1024 * 1024 // 5 MB
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])

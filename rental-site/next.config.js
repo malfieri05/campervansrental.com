@@ -72,7 +72,8 @@ const nextConfig = {
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || '',
   },
   images: {
-    domains: ['unsplash.com', 'images.unsplash.com'],
+    // Serve AVIF first (best compression), fall back to WebP, then original
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -88,6 +89,11 @@ const nextConfig = {
       },
       ...supabaseImagePatterns(),
     ],
+  },
+  experimental: {
+    // Tree-shake barrel exports for these heavy packages so per-route bundles
+    // only include the icons / functions actually imported.
+    optimizePackageImports: ['framer-motion', 'lucide-react', 'date-fns'],
   },
 }
 

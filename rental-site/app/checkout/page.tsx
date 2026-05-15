@@ -1,6 +1,13 @@
 import { Suspense } from 'react'
-import CheckoutClient from '@/components/checkout/CheckoutClient'
+import lazyImport from 'next/dynamic'
 import { getPublishedListings } from '@/lib/listings'
+
+// Defer the 800-LOC CheckoutClient (includes loadStripe/EmbeddedCheckout)
+// until after the server shell renders — users see the summary panel first.
+const CheckoutClient = lazyImport(
+  () => import('@/components/checkout/CheckoutClient'),
+  { ssr: false }
+)
 
 export const dynamic = 'force-dynamic'
 

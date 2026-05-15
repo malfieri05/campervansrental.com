@@ -10,6 +10,8 @@ import {
 } from '@/lib/booking-pricing'
 import { publicPickupLabelForListing } from '@/lib/listing-public-pickup'
 
+export const runtime = 'nodejs'
+
 export async function POST(request: Request) {
   const supabase = await createServerSupabaseClient()
   if (!supabase) {
@@ -201,32 +203,39 @@ export async function POST(request: Request) {
     listing.cancellation_policy as string | null | undefined
   )
 
-  const session = await stripe.checkout.sessions.create({
-    ui_mode: 'embedded',
-    mode: 'payment',
-    // card includes Apple Pay + Google Pay automatically on eligible devices/browsers.
-    payment_method_types: ['card'],
-    customer_email: guestEmail,
-    line_items: [
-      {
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: `Reservation fee (25%) — ${listing.title as string}`,
-            description: `${startDate} → ${endDate} (${nights} nights). ${feePolicyCopy}`,
+  // Idempotency key — identical retries (e.g. double-submit or network retry)
+  // reuse the same Stripe session instead of double-charging the guest.
+  const idempotencyKey = `checkout:${user.id}:${listingId}:${startDate}:${endDate}`
+
+  const session = await stripe.checkout.sessions.create(
+    {
+      ui_mode: 'embedded',
+      mode: 'payment',
+      // card includes Apple Pay + Google Pay automatically on eligible devices/browsers.
+      payment_method_types: ['card'],
+      customer_email: guestEmail,
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `Reservation fee (25%) — ${listing.title as string}`,
+              description: `${startDate} → ${endDate} (${nights} nights). ${feePolicyCopy}`,
+            },
+            unit_amount: reservationFee,
           },
-          unit_amount: reservationFee,
+          quantity: 1,
         },
-        quantity: 1,
+      ],
+      return_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
+      metadata: {
+        reservation_id: reservation.id as string,
+        listing_id: listingId,
+        user_id: user.id,
       },
-    ],
-    return_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
-    metadata: {
-      reservation_id: reservation.id as string,
-      listing_id: listingId,
-      user_id: user.id,
     },
-  })
+    { idempotencyKey }
+  )
 
   await supabase
     .from('reservations')

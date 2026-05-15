@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 
+export const runtime = 'nodejs'
+
 // PATCH /api/host/calendar/external/[id] — rename a feed
 // DELETE /api/host/calendar/external/[id] — remove a feed (cascades blocks)
 

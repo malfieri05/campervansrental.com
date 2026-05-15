@@ -1,8 +1,16 @@
+import lazyImport from 'next/dynamic'
 import { redirect } from 'next/navigation'
 import { differenceInCalendarDays, parseISO } from 'date-fns'
 import { getStripe } from '@/lib/stripe'
 import { createServiceRoleClient } from '@/lib/supabase/server'
-import BookingSuccessClient, { type TripSummary } from '@/components/booking/BookingSuccessClient'
+import type { TripSummary } from '@/components/booking/BookingSuccessClient'
+
+// Lazy-load the 1 kB + rental-agreement mega-component — defers ~1 085 LOC and
+// all its imports (signature canvas, agreement builder, PDF logic) until paint.
+const BookingSuccessClient = lazyImport(
+  () => import('@/components/booking/BookingSuccessClient'),
+  { ssr: false }
+)
 
 export const dynamic = 'force-dynamic'
 

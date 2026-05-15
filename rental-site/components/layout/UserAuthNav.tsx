@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -192,9 +193,11 @@ export default function UserAuthNav({ mobile = false, onMobileNavigate }: { mobi
         className="group grid h-10 w-10 shrink-0 grid-cols-1 grid-rows-1 overflow-hidden rounded-full border border-cream-300/50 bg-forest-900 p-0 transition hover:border-gold-300/70"
       >
         {authState.avatarUrl ? (
-          <img
+          <Image
             src={authState.avatarUrl}
             alt={`${authState.firstName} profile`}
+            width={40}
+            height={40}
             className="h-full w-full object-cover"
           />
         ) : (

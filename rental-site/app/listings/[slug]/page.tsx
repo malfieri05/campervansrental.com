@@ -1,10 +1,29 @@
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import ListingImageGallery from '@/components/listing/ListingImageGallery'
 import ListingDetailBody from '@/components/listing/ListingDetailBody'
 import ListingReviewsSection from '@/components/listing/ListingReviewsSection'
-import { getBlockedRangesForListing, } from '@/lib/availability'
+import { getBlockedRangesForListing } from '@/lib/availability'
 import { getPublishedListingBySlug, getListingReviews } from '@/lib/listings'
 import { siteUrl } from '@/lib/env'
+
+/** Fetches and renders reviews — runs in its own Suspense boundary so the
+ *  gallery and booking panel paint while reviews are still loading. */
+async function ReviewsStream({ listingUuid, avgRating }: { listingUuid: string; avgRating: number | null }) {
+  const reviews = await getListingReviews(listingUuid)
+  return <ListingReviewsSection reviews={reviews} avgRating={avgRating ?? 0} />
+}
+
+function ReviewsFallback() {
+  return (
+    <div className="mt-12 pt-10 border-t border-cream-300/50 lg:max-w-[calc(100%-22rem)] space-y-4 animate-pulse">
+      <div className="h-6 w-36 rounded bg-cream-300/60" />
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="rounded-xl bg-cream-200/60 h-24" />
+      ))}
+    </div>
+  )
+}
 
 export default async function ListingDetailPage({
   params,
@@ -14,10 +33,9 @@ export default async function ListingDetailPage({
   const van = await getPublishedListingBySlug(params.slug)
   if (!van) notFound()
 
-  const [blocks, reviews] = await Promise.all([
-    van.listingUuid ? getBlockedRangesForListing(van.listingUuid) : Promise.resolve([]),
-    van.listingUuid ? getListingReviews(van.listingUuid) : Promise.resolve([]),
-  ])
+  const blocks = van.listingUuid
+    ? await getBlockedRangesForListing(van.listingUuid)
+    : []
 
   const rules = (van.rules ?? {}) as Record<string, unknown>
   const pets = Boolean(rules.petsAllowed)
@@ -41,10 +59,14 @@ export default async function ListingDetailPage({
       <div className="max-w-7xl mx-auto px-6 lg:px-10 pb-16">
         <ListingDetailBody van={van} blocks={blocks} pets={pets} smoking={smoking} />
 
-        {/* Reviews section — below the grid, full content width */}
-        <div className="mt-12 pt-10 border-t border-cream-300/50 lg:max-w-[calc(100%-22rem)]">
-          <ListingReviewsSection reviews={reviews} avgRating={van.rating} />
-        </div>
+        {/* Reviews stream in separately so gallery + booking bar paint first */}
+        {van.listingUuid ? (
+          <Suspense fallback={<ReviewsFallback />}>
+            <ReviewsStream listingUuid={van.listingUuid} avgRating={van.rating} />
+          </Suspense>
+        ) : (
+          <ListingReviewsSection reviews={[]} avgRating={van.rating ?? 0} />
+        )}
       </div>
     </div>
   )

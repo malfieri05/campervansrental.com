@@ -4,6 +4,8 @@ import { getStripe } from '@/lib/stripe'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { isStripeWebhookConfigured } from '@/lib/env'
 
+export const runtime = 'nodejs'
+
 export async function POST(request: Request) {
   const stripe = getStripe()
   const secret = process.env.STRIPE_WEBHOOK_SECRET

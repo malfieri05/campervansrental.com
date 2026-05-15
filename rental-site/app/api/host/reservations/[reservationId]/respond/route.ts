@@ -3,6 +3,8 @@ import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supab
 import { getStripe } from '@/lib/stripe'
 import { sendBookingConfirmationForReservationId } from '@/lib/booking-confirmation-from-reservation'
 
+export const runtime = 'nodejs'
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ reservationId: string }> }

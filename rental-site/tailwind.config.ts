@@ -53,9 +53,9 @@ const config: Config = {
         charcoal: '#1c1c1c',
       },
       fontFamily: {
-        serif: ['Playfair Display', 'Georgia', 'serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Montserrat', 'sans-serif'],
+        serif: ['var(--font-serif)', 'Georgia', 'serif'],
+        sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'sans-serif'],
       },
       animation: {
         fadeInUp: 'fadeInUp 0.7s ease-out forwards',

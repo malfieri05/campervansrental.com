@@ -91,8 +91,6 @@ export default function Hero({
     router.push(qs ? `/fleet?${qs}` : '/fleet')
   }
 
-  if (!mounted) return null
-
   return (
     <section className="relative -mt-20 min-h-screen flex flex-col overflow-hidden">
       {/* Background Image */}
