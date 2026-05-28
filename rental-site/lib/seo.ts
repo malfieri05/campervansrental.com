@@ -37,7 +37,7 @@ export const SEO_KEYWORDS = [
 const DEFAULT_OG_IMAGE = '/rearvan.png'
 
 const DEFAULT_DESCRIPTION =
-  'Rent curated camper vans directly from verified owners. Lower fees than Outdoorsy or RVezy, real availability, and instant booking — the dedicated camper van rental marketplace at Camper Van Rentals.'
+  'Rent curated camper vans directly from verified owners. Lower transaction fees, real availability, and secure booking — the dedicated camper van rental marketplace at Camper Van Rentals.'
 
 export function absoluteUrl(path: string): string {
   const origin = getSiteOrigin()
@@ -109,7 +109,7 @@ export function buildRootMetadata(): Metadata {
 export function buildHomeMetadata(): Metadata {
   const title = 'Rent a Camper Van | Peer-to-Peer Campervan Rentals'
   const description =
-    'Book hand-picked camper vans for your next road trip. Skip the big RV platforms — compare vans, check real-time availability, and rent directly with lower platform fees than Outdoorsy, RVezy, or Facebook Marketplace.'
+    'Book hand-picked camper vans for your next road trip. Lower transaction fees, real-time availability, and the same secure checkout and rental agreements you expect from a full-service marketplace.'
 
   return {
     title,
@@ -291,23 +291,23 @@ export function buildFaqPageJsonLd(
 
 export const HOME_SEO_FAQS = [
   {
-    question: 'How is Camper Van Rentals different from Outdoorsy or RVezy?',
+    question: 'Why use a marketplace built only for camper vans?',
     answer:
-      'We focus exclusively on camper vans and converted vans — not towables or large motorhomes. Hosts keep more of each booking with lower platform fees, and renters get a cleaner search experience built for van life trips instead of generic RV inventory.',
+      'General RV sites mix motorhomes, towables, and vans in one search. We list camper vans and conversions only, so travelers find the right rig faster. Our transaction fees are much lower than most large rental marketplaces — owners keep more of each booking, and renters get the same supported trip experience at a lower total cost.',
   },
   {
-    question: 'Can I rent a camper van without using Facebook Marketplace?',
+    question: 'What do renters get when they book here?',
     answer:
-      'Yes. Every listing includes verified photos, pricing, availability calendars, secure checkout, and rental agreements — so you get the trust of a marketplace without negotiating in DMs or worrying about payment safety.',
+      'Verified listings, live availability, secure checkout, and a rental agreement on every trip — the same structure as a major booking platform, with lower service fees that reduce what you pay overall. Nightly rates and fees are shown before you commit, and you can compare class B vans, sprinter builds, and adventure rigs in one place.',
   },
   {
     question: 'What types of vans can I rent?',
     answer:
-      'Our fleet includes class B camper vans, sprinter and transit conversions, adventure rigs, and luxury van builds — all curated for road trips, national park tours, and weekend getaways.',
+      'Class B camper vans, sprinter and transit conversions, adventure rigs, and premium van builds. Each listing shows sleeps, amenities, pickup area, and nightly rate so you can choose a van that fits your route and budget.',
   },
   {
-    question: 'How do I list my camper van as an owner?',
+    question: 'How do owners earn on the platform?',
     answer:
-      'Create a host account, add your van with photos and calendar sync from Outdoorsy or other platforms, and publish when ready. You control pricing, house rules, and availability.',
+      'Create a listing with photos, pricing, and house rules, then sync your external calendar so booked dates stay accurate across channels. You keep a larger share of each trip because our transaction fees are much lower than typical marketplace rates. We handle checkout, payouts, rental agreements, and the booking flow renters expect.',
   },
 ] as const

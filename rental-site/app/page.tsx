@@ -38,7 +38,7 @@ export default async function HomePage({
         data={buildWebPageJsonLd({
           name: 'Rent a Camper Van | Camper Van Rentals',
           description:
-            'Peer-to-peer camper van and campervan rentals with lower fees than Outdoorsy or RVezy.',
+            'Peer-to-peer camper van marketplace for travelers and owners — book vans or list your rig.',
           path: '/',
         })}
       />

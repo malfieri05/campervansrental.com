@@ -76,9 +76,17 @@ export default function Footer() {
             href="https://www.arksolutions.ai/"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline underline-offset-[3px] transition-colors hover:text-gold-400/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-forest-950 rounded-sm"
+            className="inline-flex items-center underline underline-offset-[3px] decoration-solid transition-colors hover:text-gold-400/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-forest-950 rounded-sm"
           >
             ARK Solutions
+            <span
+              aria-hidden
+              className="ml-0.5 inline-block h-3.5 w-3.5 shrink-0 bg-current"
+              style={{
+                WebkitMask: 'url(/ARKlogo.png) center / contain no-repeat',
+                mask: 'url(/ARKlogo.png) center / contain no-repeat',
+              }}
+            />
           </a>
         </p>
       </div>
