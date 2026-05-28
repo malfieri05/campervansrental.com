@@ -1,8 +1,19 @@
+import type { Metadata } from 'next'
 import Hero from '@/components/home/Hero'
 import FeaturedVans from '@/components/home/FeaturedVans'
 import HowItWorks from '@/components/home/HowItWorks'
+import HomeSeoSection from '@/components/seo/HomeSeoSection'
+import JsonLd from '@/components/seo/JsonLd'
 import { effectivePickupLabels, getPublishedListings } from '@/lib/listings'
 import { filterFleetForHeroSearch, type HomeFleetSearchParams } from '@/lib/home-fleet-filter'
+import { buildHomeMetadata, buildWebPageJsonLd } from '@/lib/seo'
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    ...buildHomeMetadata(),
+    alternates: { canonical: '/' },
+  }
+}
 
 function initialGuestsFromSearch(guests: string | undefined): number {
   const n = guests != null && guests !== '' ? parseInt(guests, 10) : NaN
@@ -23,6 +34,14 @@ export default async function HomePage({
 
   return (
     <>
+      <JsonLd
+        data={buildWebPageJsonLd({
+          name: 'Rent a Camper Van | Camper Van Rentals',
+          description:
+            'Peer-to-peer camper van and campervan rentals with lower fees than Outdoorsy or RVezy.',
+          path: '/',
+        })}
+      />
       <Hero
         pickupLocations={pickupLocations}
         initialLocation={searchParams.location ?? ''}
@@ -32,6 +51,7 @@ export default async function HomePage({
       />
       <FeaturedVans listings={fleetListings} />
       <HowItWorks />
+      <HomeSeoSection />
     </>
   )
 }

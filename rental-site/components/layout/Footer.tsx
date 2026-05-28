@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import SiteLogo from '@/components/layout/SiteLogo'
+import { LEGAL_ENTITY_NAME } from '@/lib/company'
 
 export default function Footer() {
   const year = new Date().getFullYear()
@@ -20,8 +21,28 @@ export default function Footer() {
               Made for the modern explorer
             </p>
             <p className="text-xs font-sans text-cream-200/40">
-              © {year} Camper Van Rentals. All rights reserved.
+              © {year} {LEGAL_ENTITY_NAME}. All rights reserved.
             </p>
+            <nav
+              aria-label="Legal"
+              className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-sans text-xs text-cream-200/55 sm:justify-start"
+            >
+              <Link
+                href="/terms"
+                className="transition-colors hover:text-gold-400/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-forest-950 rounded-sm"
+              >
+                Terms of Service
+              </Link>
+              <span aria-hidden className="text-cream-200/25">
+                ·
+              </span>
+              <Link
+                href="/privacy"
+                className="transition-colors hover:text-gold-400/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-forest-950 rounded-sm"
+              >
+                Privacy Policy
+              </Link>
+            </nav>
           </div>
 
           <div className="flex flex-col items-center gap-1.5 font-sans text-xs text-cream-200/70 sm:text-sm order-2 sm:order-2">

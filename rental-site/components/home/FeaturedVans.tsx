@@ -19,6 +19,7 @@ export default function FeaturedVans({ listings }: Props) {
             </span>
             <div className="h-px w-16 bg-gradient-to-l from-transparent to-gold-400" />
           </div>
+          <h2 className="sr-only">Featured camper vans for rent</h2>
         </div>
 
         {listings.length === 0 ? (

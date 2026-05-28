@@ -10,6 +10,7 @@ import {
   type AgreementParams,
 } from '@/lib/rental-agreement-template'
 import { buildRentalAgreementPlainText, type SubmissionPacketFields } from '@/lib/rental-agreement-packet'
+import { EMAIL_LEGAL_FOOTER, PLATFORM_BRAND_NAME } from '@/lib/company'
 
 const BUCKET = 'rental-agreement-docs'
 
@@ -54,7 +55,7 @@ type SubmissionRow = SubmissionPacketFields & {
 function defaultFrom(): string {
   const raw = process.env.RESEND_FROM?.trim()
   if (raw) return raw
-  return 'Camper Vans Rental <onboarding@resend.dev>'
+  return `${PLATFORM_BRAND_NAME} <onboarding@resend.dev>`
 }
 
 function money(cents: number): string {
@@ -307,7 +308,9 @@ export async function sendRentalAgreementCompletionPacketIfNeeded(
     '',
     `Trip: ${tripDatesLabel} · ${listing.title}`,
     '',
-    '— Camper Vans Rental',
+    `— ${PLATFORM_BRAND_NAME}`,
+    '',
+    EMAIL_LEGAL_FOOTER,
   ].join('\n')
 
   const hostText = [
@@ -319,7 +322,9 @@ export async function sendRentalAgreementCompletionPacketIfNeeded(
     '',
     'Attached: signed agreement text, driver license images (if provided), electronic signature, and insurance details as entered by the renter.',
     '',
-    '— Camper Vans Rental',
+    `— ${PLATFORM_BRAND_NAME}`,
+    '',
+    EMAIL_LEGAL_FOOTER,
   ].join('\n')
 
   const renterHtml = `
@@ -333,7 +338,8 @@ export async function sendRentalAgreementCompletionPacketIfNeeded(
           <p style="margin:0 0 16px;font-size:15px;line-height:1.55;color:#333;">Thank you for completing your rental agreement. <strong>Please see the attachments</strong> for your signed agreement text, driver license images (if you uploaded them), and your electronic signature.</p>
           <p style="margin:0 0 20px;font-size:14px;line-height:1.55;color:#444;">We’ve also sent this same packet to your host for their records.</p>
           <p style="margin:0 0 8px;font-size:12px;color:#666;"><strong>Trip</strong> · ${e(tripDatesLabel)}<br/><strong>Vehicle</strong> · ${e(listing.title)}</p>
-          <p style="margin:20px 0 0;font-size:13px;color:#888;">— Camper Vans Rental</p>
+          <p style="margin:20px 0 0;font-size:13px;color:#888;">— ${e(PLATFORM_BRAND_NAME)}</p>
+          <p style="margin:8px 0 0;font-size:11px;line-height:1.45;color:#aaa;">${e(EMAIL_LEGAL_FOOTER)}</p>
         </td></tr>
       </table>
     </td></tr>
@@ -351,7 +357,8 @@ export async function sendRentalAgreementCompletionPacketIfNeeded(
           <p style="margin:0 0 16px;font-size:15px;line-height:1.55;color:#333;"><strong>${e(guestName)}</strong> has completed the rental agreement for <strong>${e(listing.title)}</strong>.</p>
           <p style="margin:0 0 20px;font-size:14px;line-height:1.55;color:#444;">Attachments include the agreement text, driver license photos (if provided), electronic signature, and insurance details as entered by the renter.</p>
           <p style="margin:0 0 8px;font-size:12px;color:#666;"><strong>Trip dates</strong> · ${e(tripDatesLabel)}</p>
-          <p style="margin:20px 0 0;font-size:13px;color:#888;">— Camper Vans Rental</p>
+          <p style="margin:20px 0 0;font-size:13px;color:#888;">— ${e(PLATFORM_BRAND_NAME)}</p>
+          <p style="margin:8px 0 0;font-size:11px;line-height:1.45;color:#aaa;">${e(EMAIL_LEGAL_FOOTER)}</p>
         </td></tr>
       </table>
     </td></tr>

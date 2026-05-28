@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { LEGAL_ENTITY_NAME, PLATFORM_BRAND_NAME } from '@/lib/company'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | Camper Van Rentals',
@@ -14,14 +15,14 @@ export default function PrivacyPage() {
         <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-charcoal mb-2">
           Privacy Policy
         </h1>
-        <p className="font-sans text-sm text-charcoal/50 mb-12">Last updated: May 10, 2026</p>
+        <p className="font-sans text-sm text-charcoal/50 mb-12">Last updated: May 28, 2026</p>
 
         <div className="space-y-10 font-sans text-charcoal/80 text-[0.95rem] leading-relaxed">
 
           <section>
             <h2 className="font-serif text-xl font-semibold text-charcoal mb-3">1. Introduction</h2>
             <p>
-              Camper Van Rentals LLC (&ldquo;Camper Van Rentals,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) operates the peer-to-peer camper van rental marketplace at{' '}
+              {LEGAL_ENTITY_NAME} (&ldquo;{PLATFORM_BRAND_NAME},&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) operates the peer-to-peer camper van rental marketplace at{' '}
               <a href="https://campervansrental.com" className="text-forest-700 underline hover:text-forest-600">campervansrental.com</a>{' '}
               (the &ldquo;Platform&rdquo;). This Privacy Policy explains how we collect, use, share, and protect information about you when you use our Platform, and describes your choices regarding that information.
             </p>
@@ -93,12 +94,12 @@ export default function PrivacyPage() {
 
             <h3 className="font-semibold text-charcoal text-base mt-4 mb-2">4c. Legal Requirements</h3>
             <p>
-              We may disclose your information if required by law, court order, or government authority, or when we believe disclosure is necessary to protect the rights, property, or safety of Camper Van Rentals, our users, or the public.
+              We may disclose your information if required by law, court order, or government authority, or when we believe disclosure is necessary to protect the rights, property, or safety of {PLATFORM_BRAND_NAME}, our users, or the public.
             </p>
 
             <h3 className="font-semibold text-charcoal text-base mt-4 mb-2">4d. Business Transfers</h3>
             <p>
-              If Camper Van Rentals LLC is involved in a merger, acquisition, or sale of all or a portion of its assets, your information may be transferred as part of that transaction. We will notify you via email or prominent notice on the Platform before your data is transferred and subject to a different privacy policy.
+              If {LEGAL_ENTITY_NAME} is involved in a merger, acquisition, or sale of all or a portion of its assets, your information may be transferred as part of that transaction. We will notify you via email or prominent notice on the Platform before your data is transferred and subject to a different privacy policy.
             </p>
           </section>
 
@@ -177,7 +178,10 @@ export default function PrivacyPage() {
               If you have questions, concerns, or requests related to this Privacy Policy, please contact us at:
             </p>
             <address className="mt-3 not-italic space-y-1">
-              <p className="font-medium text-charcoal">Camper Van Rentals LLC</p>
+              <p className="font-medium text-charcoal">{LEGAL_ENTITY_NAME}</p>
+              <p className="text-sm text-charcoal/60">
+                Operating the {PLATFORM_BRAND_NAME} platform at campervansrental.com
+              </p>
               <p>
                 Email:{' '}
                 <a href="mailto:support@campervansrental.com" className="text-forest-700 underline hover:text-forest-600">

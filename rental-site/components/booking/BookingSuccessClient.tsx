@@ -16,6 +16,7 @@ import {
   AGREEMENT_VERSION,
   type AgreementParams,
 } from '@/lib/rental-agreement-template'
+import { PLATFORM_AGREEMENT_NAME } from '@/lib/company'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -996,7 +997,7 @@ export default function BookingSuccessClient({
                     aria-label="Rental agreement text"
                   >
                     <p className="font-sans text-[0.65rem] uppercase tracking-widest text-charcoal/35 font-semibold">
-                      Camper Vans Rental — Rental Agreement v{AGREEMENT_VERSION}
+                      {PLATFORM_AGREEMENT_NAME} — Rental Agreement v{AGREEMENT_VERSION}
                     </p>
                     {agreementSections.map((sec) => (
                       <div key={sec.heading}>

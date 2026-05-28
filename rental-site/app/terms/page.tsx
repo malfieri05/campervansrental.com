@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { LEGAL_ENTITY_NAME, PLATFORM_BRAND_NAME } from '@/lib/company'
 
 export const metadata: Metadata = {
   title: 'Terms of Service | Camper Van Rentals',
@@ -14,14 +15,14 @@ export default function TermsPage() {
         <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-charcoal mb-2">
           Terms of Service
         </h1>
-        <p className="font-sans text-sm text-charcoal/50 mb-12">Last updated: May 10, 2026</p>
+        <p className="font-sans text-sm text-charcoal/50 mb-12">Last updated: May 28, 2026</p>
 
         <div className="space-y-10 font-sans text-charcoal/80 text-[0.95rem] leading-relaxed">
 
           <section>
             <h2 className="font-serif text-xl font-semibold text-charcoal mb-3">1. Acceptance of Terms</h2>
             <p>
-              Welcome to Camper Van Rentals, operated by Camper Van Rentals LLC (&ldquo;Company,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;). By creating an account, accessing, or using our website at{' '}
+              Welcome to {PLATFORM_BRAND_NAME}, operated by {LEGAL_ENTITY_NAME} (&ldquo;Company,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;). By creating an account, accessing, or using our website at{' '}
               <a href="https://campervansrental.com" className="text-forest-700 underline hover:text-forest-600">campervansrental.com</a>{' '}
               (the &ldquo;Platform&rdquo;), you agree to be bound by these Terms of Service (&ldquo;Terms&rdquo;). If you do not agree to these Terms, you may not use the Platform.
             </p>
@@ -43,7 +44,7 @@ export default function TermsPage() {
           <section>
             <h2 className="font-serif text-xl font-semibold text-charcoal mb-3">3. Description of the Platform</h2>
             <p>
-              Camper Van Rentals is a peer-to-peer marketplace that connects independent vehicle owners (&ldquo;Hosts&rdquo;) with travelers seeking to rent camper vans (&ldquo;Guests&rdquo;). We do not own the vehicles listed on the Platform. We provide the technology, tools, and support to facilitate bookings between Hosts and Guests.
+              {PLATFORM_BRAND_NAME} is a peer-to-peer marketplace that connects independent vehicle owners (&ldquo;Hosts&rdquo;) with travelers seeking to rent camper vans (&ldquo;Guests&rdquo;). We do not own the vehicles listed on the Platform. We provide the technology, tools, and support to facilitate bookings between Hosts and Guests.
             </p>
             <p className="mt-3">
               We are not a party to the rental agreement between a Host and a Guest, nor are we a rental agency, insurer, or transportation carrier. Any rental transaction is a direct agreement between the Host and the Guest, subject to the terms they each accept.
@@ -129,7 +130,7 @@ export default function TermsPage() {
           <section>
             <h2 className="font-serif text-xl font-semibold text-charcoal mb-3">11. Limitation of Liability</h2>
             <p>
-              TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, CAMPER VAN RENTALS LLC AND ITS OFFICERS, DIRECTORS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING OUT OF OR RELATED TO YOUR USE OF THE PLATFORM, INCLUDING BUT NOT LIMITED TO LOSS OF PROFITS, DATA, GOODWILL, OR PERSONAL INJURY, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+              TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, ARK SOLUTIONS CORE, LLC AND ITS OFFICERS, DIRECTORS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING OUT OF OR RELATED TO YOUR USE OF THE PLATFORM, INCLUDING BUT NOT LIMITED TO LOSS OF PROFITS, DATA, GOODWILL, OR PERSONAL INJURY, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
             </p>
             <p className="mt-3">
               OUR TOTAL CUMULATIVE LIABILITY TO YOU FOR ANY CLAIM ARISING FROM OR RELATED TO THESE TERMS OR YOUR USE OF THE PLATFORM SHALL NOT EXCEED THE GREATER OF (A) THE TOTAL FEES PAID BY YOU TO US IN THE TWELVE MONTHS PRECEDING THE CLAIM OR (B) ONE HUNDRED DOLLARS (USD $100).
@@ -139,7 +140,7 @@ export default function TermsPage() {
           <section>
             <h2 className="font-serif text-xl font-semibold text-charcoal mb-3">12. Indemnification</h2>
             <p>
-              You agree to defend, indemnify, and hold harmless Camper Van Rentals LLC and its officers, directors, employees, and agents from and against any claims, damages, losses, liabilities, costs, and expenses (including reasonable attorneys&rsquo; fees) arising from: (a) your use of the Platform; (b) your violation of these Terms; (c) your listing, rental, or use of a vehicle; or (d) your violation of any third-party rights.
+              You agree to defend, indemnify, and hold harmless {LEGAL_ENTITY_NAME} and its officers, directors, employees, and agents from and against any claims, damages, losses, liabilities, costs, and expenses (including reasonable attorneys&rsquo; fees) arising from: (a) your use of the Platform; (b) your violation of these Terms; (c) your listing, rental, or use of a vehicle; or (d) your violation of any third-party rights.
             </p>
           </section>
 
@@ -165,7 +166,10 @@ export default function TermsPage() {
               If you have questions about these Terms, please contact us at:
             </p>
             <address className="mt-3 not-italic space-y-1">
-              <p className="font-medium text-charcoal">Camper Van Rentals LLC</p>
+              <p className="font-medium text-charcoal">{LEGAL_ENTITY_NAME}</p>
+              <p className="text-sm text-charcoal/60">
+                Operating the {PLATFORM_BRAND_NAME} platform at campervansrental.com
+              </p>
               <p>
                 Email:{' '}
                 <a href="mailto:support@campervansrental.com" className="text-forest-700 underline hover:text-forest-600">

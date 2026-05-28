@@ -1,3 +1,5 @@
+import { LEGAL_ENTITY_NAME, PLATFORM_AGREEMENT_NAME } from '@/lib/company'
+
 /**
  * Camper Van Rental Agreement Template — Version 1.0
  *
@@ -29,7 +31,7 @@ export interface AgreementParams {
 }
 
 export function buildAgreementSections(p: AgreementParams): AgreementSection[] {
-  const platform = p.platformName ?? 'Camper Vans Rental'
+  const platform = p.platformName ?? PLATFORM_AGREEMENT_NAME
   const vehicle = `${p.vehicleYear} ${p.vehicleMake} ${p.vehicleModel}`.trim() || p.vehicleTitle
 
   return [
@@ -41,7 +43,7 @@ Host / Owner: ${p.hostName}, a registered host on the ${platform} platform ("Hos
 
 Renter: ${p.renterFullName} ("Renter").
 
-${platform} is a technology platform that facilitates connections between Hosts and Renters; it is not a party to this Agreement and does not own or operate the Vehicle. All rights, obligations, and liabilities under this Agreement run between Host and Renter only.`,
+${platform} is a technology platform operated by ${LEGAL_ENTITY_NAME} that facilitates connections between Hosts and Renters; it is not a party to this Agreement and does not own or operate the Vehicle. All rights, obligations, and liabilities under this Agreement run between Host and Renter only.`,
     },
     {
       heading: '2. Vehicle Description',

@@ -163,10 +163,10 @@ export default function Hero({
       >
         <div className="max-w-5xl mx-auto">
           <div className="glass-card rounded-2xl shadow-luxury ring-1 ring-black/10 overflow-hidden border border-cream-200/30">
-            {/* Mobile: location | pick up & return | guests | search; md+: horizontal bar with guests */}
+            {/* Mobile: 2×2 (location | guests, pick up | return) + search; md+: horizontal bar */}
             <div className="grid grid-cols-2 md:grid-cols-4 md:divide-x md:divide-cream-300/20">
               {/* Pickup Location */}
-              <div className="flex max-md:col-span-2 max-md:row-start-1 max-md:border-b border-cream-300/20 items-center gap-3 px-4 py-3.5 sm:px-6 sm:py-5 md:border-0 md:py-5">
+              <div className="flex max-md:col-span-1 max-md:col-start-1 max-md:row-start-1 max-md:border-r max-md:border-b border-cream-300/20 items-center gap-3 px-4 py-3.5 sm:px-6 sm:py-5 md:border-0 md:py-5">
                 <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gold-500 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <label className="font-display text-[0.65rem] md:text-[0.6rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-1 md:mb-0.5">
@@ -235,8 +235,8 @@ export default function Hero({
                 />
               </div>
 
-              {/* Guests — mobile row (desktop uses segment below) */}
-              <div className="flex max-md:col-span-2 max-md:row-start-3 max-md:border-b border-cream-300/20 items-center gap-3 px-4 py-3.5 sm:px-6 sm:py-5 md:hidden min-h-[3.25rem]">
+              {/* Guests — mobile top-right (desktop uses segment below) */}
+              <div className="flex max-md:col-span-1 max-md:col-start-2 max-md:row-start-1 max-md:border-b border-cream-300/20 items-center gap-3 px-4 py-3.5 sm:px-6 sm:py-5 md:hidden min-h-[3.25rem]">
                 <Users className="w-4 h-4 shrink-0 text-gold-500 sm:h-5 sm:w-5" />
                 <div className="min-w-0 flex-1">
                   <label className="font-display text-[0.65rem] font-bold uppercase tracking-[0.15em] text-forest-700 block mb-1">
@@ -279,7 +279,7 @@ export default function Hero({
                   type="button"
                   onClick={handleSearch}
                   aria-label="Search"
-                  className="max-md:col-span-2 max-md:row-start-4 flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-sm bg-gold-400 px-4 shadow-gold transition-colors duration-200 hover:bg-gold-300 md:ml-1 md:h-11 md:w-11 md:px-0"
+                  className="max-md:col-span-2 max-md:row-start-3 flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-sm bg-gold-400 px-4 shadow-gold transition-colors duration-200 hover:bg-gold-300 md:ml-1 md:h-11 md:w-11 md:px-0"
                 >
                   <Search className="h-4 w-4 text-forest-950 sm:h-5 sm:w-5" strokeWidth={2} />
                   <span className="font-display text-sm font-bold uppercase tracking-[0.12em] text-forest-950 md:hidden">

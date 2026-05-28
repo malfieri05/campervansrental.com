@@ -7,6 +7,7 @@ import { siteUrl } from '@/lib/env'
 import { getCategoryLabel } from '@/lib/data'
 import type { Van } from '@/types'
 import { reservationFeeRefundPolicyCopy } from '@/lib/booking-pricing'
+import { EMAIL_LEGAL_FOOTER, PLATFORM_BRAND_NAME } from '@/lib/company'
 
 export type BookingConfirmationPayload = {
   to: string
@@ -56,7 +57,7 @@ function money(cents: number): string {
 function defaultFrom(): string {
   const raw = process.env.RESEND_FROM?.trim()
   if (raw) return raw
-  return 'Camper Vans Rental <onboarding@resend.dev>'
+  return `${PLATFORM_BRAND_NAME} <onboarding@resend.dev>`
 }
 
 /** Sends booking confirmation after reservation fee payment. No-op if RESEND_API_KEY is unset. */
@@ -104,7 +105,7 @@ export async function sendBookingConfirmationEmail(
   const textLines = [
     `Hi ${guestName},`,
     '',
-    `Thank you for booking with Camper Vans Rental. Your reservation fee has been received and your trip is confirmed.`,
+    `Thank you for booking with ${PLATFORM_BRAND_NAME}. Your reservation fee has been received and your trip is confirmed.`,
     '',
     'TRIP DETAILS',
     `Vehicle: ${listingTitle}`,
@@ -131,7 +132,9 @@ export async function sendBookingConfirmationEmail(
     '',
     'We’ll follow up with any next steps before your trip. If you have questions, reply to this email.',
     '',
-    '— Camper Vans Rental',
+    `— ${PLATFORM_BRAND_NAME}`,
+    '',
+    EMAIL_LEGAL_FOOTER,
   ]
 
   const text = textLines.join('\n')
@@ -150,7 +153,7 @@ export async function sendBookingConfirmationEmail(
             <td style="padding:28px 28px 8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
               <p style="margin:0 0 16px;font-size:15px;line-height:1.5;color:#333;">Hi ${e(guestName)},</p>
               <p style="margin:0 0 20px;font-size:15px;line-height:1.55;color:#333;">
-                Thank you for booking with <strong>Camper Vans Rental</strong>. Your reservation fee has been received and <strong>your trip is confirmed</strong>.
+                Thank you for booking with <strong>${e(PLATFORM_BRAND_NAME)}</strong>. Your reservation fee has been received and <strong>your trip is confirmed</strong>.
               </p>
               <p style="margin:0 0 8px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#a67c2d;font-weight:600;">Trip details</p>
               <table role="presentation" width="100%" style="margin-bottom:20px;font-size:14px;line-height:1.6;color:#222;">
@@ -176,7 +179,8 @@ export async function sendBookingConfirmationEmail(
               <p style="margin:0 0 20px;font-size:13px;line-height:1.55;color:#444;">${e(to)}<br/>${e(guestPhone)}</p>
               <p style="margin:0 0 16px;font-size:12px;line-height:1.5;color:#666;border-left:3px solid #d4b87a;padding-left:12px;">${e(feePolicyCopy)}</p>
               <p style="margin:0;font-size:13px;line-height:1.55;color:#333;">We’ll follow up with any next steps before your trip. Questions? Reply to this email.</p>
-              <p style="margin:20px 0 0;font-size:13px;color:#888;">— Camper Vans Rental</p>
+              <p style="margin:20px 0 0;font-size:13px;color:#888;">— ${e(PLATFORM_BRAND_NAME)}</p>
+              <p style="margin:8px 0 0;font-size:11px;line-height:1.45;color:#aaa;">${e(EMAIL_LEGAL_FOOTER)}</p>
             </td>
           </tr>
         </table>

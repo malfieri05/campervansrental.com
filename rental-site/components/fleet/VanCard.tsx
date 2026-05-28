@@ -59,7 +59,7 @@ export default function VanCard({ van }: VanCardProps) {
       <div className="relative h-52 sm:h-56 shrink-0 overflow-hidden rounded-t-2xl">
         <Image
           src={src}
-          alt={`${van.name} — photo ${safeIndex + 1} of ${n}`}
+          alt={`${van.name} camper van rental — photo ${safeIndex + 1} of ${n}`}
           fill
           className="object-cover"
           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
@@ -68,9 +68,8 @@ export default function VanCard({ van }: VanCardProps) {
         {/* Invisible overlay link */}
         <Link
           href={listingHref}
-          target="_blank"
-          rel="noopener noreferrer"
           tabIndex={-1}
+          aria-label={`View ${van.name} camper van listing`}
           className="absolute inset-0 z-10 cursor-pointer"
         />
 
@@ -116,12 +115,7 @@ export default function VanCard({ van }: VanCardProps) {
       </div>
 
       {/* Details */}
-      <Link
-        href={listingHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex flex-col gap-0.5 px-4 py-3.5 rounded-b-2xl"
-      >
+      <Link href={listingHref} className="flex flex-col gap-0.5 px-4 py-3.5 rounded-b-2xl">
         <h3 className="font-sans text-[0.9rem] font-semibold text-charcoal leading-snug line-clamp-2 transition-colors group-hover/card:text-forest-800">
           {van.name}
         </h3>

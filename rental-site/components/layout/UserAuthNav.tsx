@@ -114,43 +114,48 @@ export default function UserAuthNav({ mobile = false, onMobileNavigate }: { mobi
   }
 
   if (authState.status === 'logged_out') {
+    const authLinkClass = (active: boolean) =>
+      [
+        'font-display text-xs font-semibold uppercase tracking-[0.12em] transition-colors',
+        active ? 'text-gold-300' : 'text-cream-200/90 hover:text-gold-300',
+      ].join(' ')
+
     return (
       <div
         className={
           mobile
-            ? 'flex flex-col gap-3 pt-2'
+            ? 'flex flex-col items-center gap-3 pt-2'
             : 'hidden lg:flex items-center gap-4'
         }
       >
-        <Link
-          href="/auth/login"
-          onClick={mobile ? onMobileNavigate : undefined}
-          className={[
-            'font-display text-xs font-semibold uppercase tracking-[0.12em] transition-colors',
-            pathname === '/auth/login'
-              ? 'text-gold-300'
-              : 'text-cream-200/90 hover:text-gold-300',
-          ].join(' ')}
+        <div
+          className={
+            mobile ? 'flex items-center justify-center gap-3' : 'flex items-center gap-4'
+          }
         >
-          Log in
-        </Link>
-        {!mobile && <span className="text-cream-200/50 text-xs" aria-hidden>|</span>}
-        <Link
-          href="/auth/signup"
-          onClick={mobile ? onMobileNavigate : undefined}
-          className={[
-            'font-display text-xs font-semibold uppercase tracking-[0.12em] transition-colors',
-            pathname === '/auth/signup'
-              ? 'text-gold-300'
-              : 'text-cream-200/90 hover:text-gold-300',
-          ].join(' ')}
-        >
-          Sign up
-        </Link>
+          <Link
+            href="/auth/login"
+            onClick={mobile ? onMobileNavigate : undefined}
+            className={authLinkClass(pathname === '/auth/login')}
+          >
+            Log in
+          </Link>
+          <span className="text-cream-200/50 text-xs" aria-hidden>
+            |
+          </span>
+          <Link
+            href="/auth/signup"
+            onClick={mobile ? onMobileNavigate : undefined}
+            className={authLinkClass(pathname === '/auth/signup')}
+          >
+            Sign up
+          </Link>
+        </div>
         <Button
           href={`/auth/signup?next=${encodeURIComponent('/host/listings/new')}`}
           variant="secondary"
           size="sm"
+          fullWidth={mobile}
         >
           Try hosting today
         </Button>

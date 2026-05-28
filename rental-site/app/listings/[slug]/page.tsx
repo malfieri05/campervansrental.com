@@ -1,11 +1,28 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import ListingImageGallery from '@/components/listing/ListingImageGallery'
 import ListingDetailBody from '@/components/listing/ListingDetailBody'
 import ListingReviewsSection from '@/components/listing/ListingReviewsSection'
+import JsonLd from '@/components/seo/JsonLd'
 import { getBlockedRangesForListing } from '@/lib/availability'
 import { getPublishedListingBySlug, getListingReviews } from '@/lib/listings'
 import { siteUrl } from '@/lib/env'
+import {
+  buildBreadcrumbJsonLd,
+  buildListingMetadata,
+  buildListingProductJsonLd,
+} from '@/lib/seo'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string }
+}): Promise<Metadata> {
+  const van = await getPublishedListingBySlug(params.slug)
+  if (!van) return { title: 'Listing not found' }
+  return buildListingMetadata(van)
+}
 
 /** Fetches and renders reviews — runs in its own Suspense boundary so the
  *  gallery and booking panel paint while reviews are still loading. */
@@ -45,6 +62,16 @@ export default async function ListingDetailPage({
 
   return (
     <div className="min-h-screen bg-cream-100">
+      <JsonLd
+        data={[
+          buildBreadcrumbJsonLd([
+            { name: 'Home', path: '/' },
+            { name: 'Fleet', path: '/fleet' },
+            { name: van.name, path: `/listings/${params.slug}` },
+          ]),
+          buildListingProductJsonLd(van),
+        ]}
+      />
       {/* Gallery — wider than body content */}
       <div className="w-full max-w-[88rem] mx-auto px-4 sm:px-6 pt-8">
         <ListingImageGallery

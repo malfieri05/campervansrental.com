@@ -142,6 +142,11 @@ export default function ListingDetailBody({ van, blocks, pets, smoking }: Props)
           </div>
         )}
 
+        {/* Inline chatbot (optional, host-toggled) */}
+        {van.listingChatbotEnabled && (
+          <ListingInlineChat slug={van.id} />
+        )}
+
         {/* House rules */}
         <div>
           <h2 className="font-serif text-2xl font-semibold text-charcoal mb-4">House rules</h2>
@@ -167,11 +172,6 @@ export default function ListingDetailBody({ van, blocks, pets, smoking }: Props)
             ))}
           </div>
         </div>
-
-        {/* Inline chatbot (optional, host-toggled) */}
-        {van.listingChatbotEnabled && (
-          <ListingInlineChat slug={van.id} />
-        )}
 
         {/* Pick-up & drop-off (optional host content) */}
         {(van.pickupDropoffRulesText?.trim() || van.pickupDropoffRulesDocUrl?.trim()) && (

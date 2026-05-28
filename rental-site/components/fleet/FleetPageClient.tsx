@@ -20,7 +20,7 @@ export default function FleetPageClient({
       <section className="relative h-72 md:h-96 flex items-end overflow-hidden">
         <Image
           src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=1920"
-          alt="Fleet of luxury camper vans"
+          alt="Camper vans for rent — browse peer-to-peer campervan rentals"
           fill
           priority
           className="object-cover object-center"
@@ -29,11 +29,15 @@ export default function FleetPageClient({
         <div className="absolute inset-0 bg-gradient-to-t from-forest-950 via-forest-950/60 to-forest-950/20" />
         <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-10 pb-12">
           <h1
-            className="font-serif text-cream-50 font-bold"
+            className="font-serif text-cream-50 font-bold leading-tight"
             style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)' }}
           >
-            Our Fleet
+            Camper Vans for Rent
           </h1>
+          <p className="mt-3 max-w-2xl font-sans text-base text-cream-100/80 sm:text-lg">
+            Peer-to-peer campervan rentals — sprinter vans, class B builds, and adventure rigs ready
+            for your next road trip.
+          </p>
         </div>
       </section>
 
