@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import RatingOrNewBadge from '@/components/ui/RatingOrNewBadge'
 import { Van } from '@/types'
@@ -17,6 +17,36 @@ const CARD_IMAGE_MAX = 5
 const PLACEHOLDER_IMG =
   'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?w=800'
 
+/** Pre-mount carousel slides once the card is near/in view or the user shows intent. */
+function useCarouselWarm(imageCount: number) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [warm, setWarm] = useState(false)
+
+  const warmNow = useCallback(() => {
+    if (imageCount > 1) setWarm(true)
+  }, [imageCount])
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el || imageCount <= 1 || warm) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setWarm(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '250px' }
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [imageCount, warm])
+
+  return { containerRef, warm, warmNow }
+}
+
 export default function VanCard({ van }: VanCardProps) {
   const raw = van.images?.length ? van.images : []
   const cardImages = raw.length === 0 ? [PLACEHOLDER_IMG] : raw.slice(0, CARD_IMAGE_MAX)
@@ -24,7 +54,7 @@ export default function VanCard({ van }: VanCardProps) {
   const [index, setIndex] = useState(0)
   const n = cardImages.length
   const safeIndex = n ? ((index % n) + n) % n : 0
-  const src = cardImages[safeIndex] ?? PLACEHOLDER_IMG
+  const { containerRef, warm, warmNow } = useCarouselWarm(n)
 
   const listingHref = `/listings/${van.id}`
 
@@ -33,9 +63,10 @@ export default function VanCard({ van }: VanCardProps) {
       e.preventDefault()
       e.stopPropagation()
       if (n <= 1) return
+      warmNow()
       setIndex((i) => (i + delta + n) % n)
     },
-    [n]
+    [n, warmNow]
   )
 
   const specs = [
@@ -55,15 +86,35 @@ export default function VanCard({ van }: VanCardProps) {
         'hover:-translate-y-1 hover:shadow-lg hover:shadow-black/[0.08]',
       ].join(' ')}
     >
-      {/* Image block */}
-      <div className="relative h-52 sm:h-56 shrink-0 overflow-hidden rounded-t-2xl">
-        <Image
-          src={src}
-          alt={`${van.name} camper van rental — photo ${safeIndex + 1} of ${n}`}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-        />
+      {/* Image block — stacked slides so index changes never wait on a new fetch */}
+      <div
+        ref={containerRef}
+        onPointerEnter={warmNow}
+        className="relative h-52 sm:h-56 shrink-0 overflow-hidden rounded-t-2xl bg-neutral-100"
+      >
+        {cardImages.map((url, i) => {
+          if (!warm && i !== 0) return null
+
+          const active = i === safeIndex
+
+          return (
+            <Image
+              key={`${van.id}-photo-${i}`}
+              src={url}
+              alt={`${van.name} camper van rental — photo ${i + 1} of ${n}`}
+              fill
+              priority={i === 0}
+              loading={i === 0 ? undefined : 'eager'}
+              fetchPriority={i === 0 ? 'high' : 'low'}
+              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+              className={[
+                'object-cover',
+                active ? 'opacity-100 z-[1]' : 'opacity-0 z-0 pointer-events-none',
+              ].join(' ')}
+              aria-hidden={!active}
+            />
+          )
+        })}
 
         {/* Invisible overlay link */}
         <Link
@@ -78,6 +129,7 @@ export default function VanCard({ van }: VanCardProps) {
           <>
             <button
               type="button"
+              onPointerEnter={warmNow}
               onClick={(e) => go(-1, e)}
               className="absolute left-2 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-white/75 text-charcoal shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
               aria-label="Previous photo"
@@ -86,6 +138,7 @@ export default function VanCard({ van }: VanCardProps) {
             </button>
             <button
               type="button"
+              onPointerEnter={warmNow}
               onClick={(e) => go(1, e)}
               className="absolute right-2 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-white/75 text-charcoal shadow transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
               aria-label="Next photo"
